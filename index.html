@@ -13,6 +13,15 @@
 <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png">
 <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144.png">
+<!-- Anti-FOUC: terapkan tema sebelum CSS di-parse, eliminasi flash -->
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem('ikl_sppg_theme_v1');
+    if(t === 'dark') document.documentElement.setAttribute('data-theme','dark');
+  } catch(e){}
+})();
+</script>
 <!-- Google Fonts removed: using system font stack for offline/sandbox compatibility -->
 <style>
 /* ═══════════════════════════════════════════════════════
@@ -182,14 +191,25 @@ body {
   min-height: 100dvh;
 }
 
-/* ── TRANSISI TEMA: metode CSS variable ──
-   Semua elemen yg perlu transisi tema menggunakan var(--td)
-   sebagai durasi. Saat tema toggle, --td di-set ke nilai
-   aktif 350ms, lalu dikembalikan ke 0ms setelah selesai.   */
+/* ── TRANSISI TEMA: menggunakan ::view-transition untuk Chrome 111+
+   dengan fallback ke CSS transition pada semua elemen sekaligus.
+   Kunci: transisi diaktifkan di html level, bukan per-elemen,
+   sehingga SEMUA elemen bergerak dalam satu frame yang sama.     */
 :root { --td: 0ms; }
-html.theme-switching { --td: 350ms; }
 
-/* Elemen yg ikut transisi tema */
+/* Saat tema-switching: aktifkan durasi transisi di semua elemen */
+html.theme-switching { --td: 380ms; }
+
+/* View Transition API — smooth crossfade untuk browser modern */
+@supports (view-transition-name: none) {
+  html.theme-switching::view-transition-old(root),
+  html.theme-switching::view-transition-new(root) {
+    animation-duration: 380ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Elemen yg ikut transisi tema — diperluas agar tidak ada yang tertinggal */
 body,
 .section-card, .section-hdr, .section-hdr-icon,
 .section-body-inner, .section-hdr-title, .section-hdr-sub,
@@ -208,10 +228,42 @@ body,
 .stat-card, .stat-label, .stat-sub,
 .divider, .sign-area,
 .tbl-cell, .modal-box, .btn-solid-danger,
+.btn-outline, .bar-btn, .bar-col-score,
+.grp-card-inner, .grp-card-wrap,
+.chip-kritis, .chip-mayor, .chip-minor, .chip-ok,
+.req-subheader, .req-group-title,
+.history-item, .modal-overlay,
 #app-wrapper {
   transition-property: background-color, border-color, color, box-shadow;
   transition-duration: var(--td);
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── VIEW TRANSITION API — crossfade tema halus (Chrome 111+) ────── */
+::view-transition-old(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  animation: theme-fade-in 380ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes theme-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+/* Pastikan transition tidak conflict dengan animasi lain */
+html.theme-switching * {
+  transition-delay: 0ms !important;
+}
+
+/* ── ICON TEMA: animasi rotate + fade saat toggle ─────────────────── */
+#theme-toggle svg {
+  width:18px; height:18px;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease;
+}
+html.theme-switching #theme-toggle svg {
+  transform: rotate(180deg) scale(0.8);
+  opacity: 0.3;
 }
 
 /* Background texture */
@@ -221,6 +273,7 @@ body::before {
   background-image:
     radial-gradient(ellipse 80% 60% at 10% 0%, rgba(45,90,61,.07) 0%, transparent 60%),
     radial-gradient(ellipse 60% 80% at 90% 100%, rgba(45,90,61,.05) 0%, transparent 60%);
+  transition: background-image var(--td) cubic-bezier(0.4,0,0.2,1);
 }
 [data-theme="dark"] body::before {
   background-image:
@@ -848,7 +901,10 @@ textarea.field-input { resize:vertical; min-height:90px; }
   background:var(--surface);
   border-top:1px solid var(--border);
   box-shadow:0 -8px 24px rgba(0,0,0,.12);
-  transition:background var(--dur-slow), border-color var(--dur-slow), transform var(--dur-base) var(--ease-out);
+  transition:background var(--td) cubic-bezier(0.4,0,0.2,1),
+             border-color var(--td) cubic-bezier(0.4,0,0.2,1),
+             box-shadow var(--td) cubic-bezier(0.4,0,0.2,1),
+             transform var(--dur-base) var(--ease-out);
   backdrop-filter:blur(12px);
   -webkit-backdrop-filter:blur(12px);
 }
@@ -1357,14 +1413,16 @@ textarea.field-input { resize:vertical; min-height:90px; }
   border-color: var(--danger);
 }
 .chip-mayor {
-  background: rgba(249,115,22,.12);
-  color: #F97316;
-  border-color: #F97316;
+  background: rgba(249,115,22,.15);
+  color: #C2410C;              /* lebih gelap dari #F97316 → kontras light: 5.2:1 ✅ */
+  border-color: #EA580C;
+  border-width: 1.5px;
 }
 .chip-minor {
-  background: rgba(245,158,11,.12);
-  color: #F59E0B;
-  border-color: #F59E0B;
+  background: rgba(245,158,11,.15);
+  color: #92400E;              /* lebih gelap dari #F59E0B → kontras light: 6.1:1 ✅ */
+  border-color: #D97706;
+  border-width: 1.5px;
 }
 .chip-ok {
   background: var(--brand-light);
@@ -1445,8 +1503,18 @@ textarea.field-input { resize:vertical; min-height:90px; }
 .btn-summary-copy.copied { color: var(--brand); border-color: var(--brand); background: var(--brand-light); }
 
 [data-theme="dark"] .summary-box { background: var(--surface); }
-[data-theme="dark"] .chip-mayor  { background: rgba(249,115,22,.18); }
-[data-theme="dark"] .chip-minor  { background: rgba(245,158,11,.18); }
+[data-theme="dark"] .chip-mayor  {
+  background: rgba(249,115,22,.18);
+  color: #FB923C;              /* lebih terang di dark → kontras dark: 5.1:1 ✅ */
+  border-color: #F97316;
+  border-width: 1.5px;
+}
+[data-theme="dark"] .chip-minor  {
+  background: rgba(245,158,11,.18);
+  color: #FCD34D;              /* lebih terang di dark → kontras dark: 5.4:1 ✅ */
+  border-color: #F59E0B;
+  border-width: 1.5px;
+}
 
 /* ── FOTO BUKTI PER KRITERIA (Tahap 3 #11) ── */
 .photo-btn {
@@ -1993,6 +2061,396 @@ textarea.field-input { resize:vertical; min-height:90px; }
   .bar-btn { padding: 5px 6px; font-size: 10px; }
   .btn { padding: 7px 12px; font-size: 12px; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   #08 TOAST NOTIFICATION SYSTEM
+═══════════════════════════════════════════════════════ */
+#toast-container {
+  position: fixed;
+  bottom: 80px;        /* di atas score bar */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  width: min(92vw, 480px);
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,.18);
+  pointer-events: auto;
+  cursor: pointer;
+  max-width: 100%;
+  border: 1px solid transparent;
+  animation: toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast.toast-hiding {
+  animation: toast-out 0.25s ease forwards;
+}
+.toast-icon { flex-shrink: 0; margin-top: 1px; }
+.toast-icon svg { width: 16px; height: 16px; }
+.toast-msg { flex: 1; }
+.toast-close {
+  flex-shrink: 0;
+  opacity: 0.5;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.toast-close:hover { opacity: 1; }
+
+/* Tipe toast */
+.toast-success {
+  background: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+}
+.toast-error {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+.toast-info {
+  background: #eff6ff;
+  color: #1e40af;
+  border-color: #bfdbfe;
+}
+.toast-warning {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fde68a;
+}
+/* Dark mode toast */
+[data-theme="dark"] .toast-success {
+  background: #052e16; color: #86efac; border-color: #166534;
+}
+[data-theme="dark"] .toast-error {
+  background: #450a0a; color: #fca5a5; border-color: #991b1b;
+}
+[data-theme="dark"] .toast-info {
+  background: #0f172a; color: #93c5fd; border-color: #1e40af;
+}
+[data-theme="dark"] .toast-warning {
+  background: #1c0a00; color: #fcd34d; border-color: #92400e;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.92); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0)    scale(1); }
+  to   { opacity: 0; transform: translateY(8px)  scale(0.95); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   #03 SPLASH SCREEN LISENSI
+═══════════════════════════════════════════════════════ */
+#license-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  transition: opacity 0.4s ease;
+}
+#license-splash.splash-hiding {
+  opacity: 0;
+  pointer-events: none;
+}
+.splash-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0,0,0,.12);
+}
+.splash-logo {
+  width: 64px;
+  height: 64px;
+  background: var(--brand);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+.splash-logo svg { width: 36px; height: 36px; color: #fff; }
+.splash-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.splash-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+.splash-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-alt);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.splash-tab {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.splash-tab.active {
+  background: var(--surface);
+  color: var(--brand);
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+}
+.splash-panel { display: none; }
+.splash-panel.active { display: block; }
+
+.splash-input-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: left;
+  margin-bottom: 6px;
+  display: block;
+}
+.splash-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: center;
+  color: var(--text-primary);
+  background: var(--surface-alt);
+  box-sizing: border-box;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  transition: border-color 0.2s;
+}
+.splash-input:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+.splash-input.input-error { border-color: var(--danger); }
+.splash-input.input-ok    { border-color: #16a34a; }
+
+.splash-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  min-height: 16px;
+  text-align: left;
+}
+.splash-hint.hint-error { color: var(--danger); }
+.splash-hint.hint-ok    { color: #16a34a; font-weight: 600; }
+
+.splash-btn {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  margin-bottom: 10px;
+}
+.splash-btn:active { transform: scale(0.97); }
+.splash-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.splash-btn-secondary {
+  width: 100%;
+  padding: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.splash-btn-secondary:hover { border-color: var(--brand); color: var(--brand); }
+
+.splash-trial-badge {
+  display: inline-block;
+  background: var(--brand-light);
+  color: var(--brand);
+  border: 1px solid var(--brand);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: 0.04em;
+}
+.splash-trial-info {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.splash-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+.splash-footer {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 14px;
+}
+.splash-footer a {
+  color: var(--brand);
+  text-decoration: none;
+}
+
+/* ═══════════════════════════════════════════════════════
+   #05 BADGE LISENSI DI HEADER
+═══════════════════════════════════════════════════════ */
+#license-badge {
+  display: none;         /* hidden by default, shown after license active */
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text-secondary);
+  cursor: default;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+#license-badge.badge-trial {
+  background: var(--brand-light);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+#license-badge.badge-expiring {
+  background: rgba(245,158,11,.12);
+  border-color: #D97706;
+  color: #92400E;
+}
+[data-theme="dark"] #license-badge.badge-expiring {
+  color: #FCD34D;
+  border-color: #F59E0B;
+}
+#license-badge.badge-active {
+  display: flex;
+}
+#license-badge svg { width: 11px; height: 11px; flex-shrink: 0; }
+
+/* ═══════════════════════════════════════════════════════
+   #06 MODAL EKSPOR / IMPOR
+═══════════════════════════════════════════════════════ */
+#backup-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(0,0,0,.5);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+#backup-modal.open {
+  display: flex;
+}
+.backup-box {
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 36px;
+  width: 100%;
+  max-width: 560px;
+  border-top: 1px solid var(--border);
+}
+.backup-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.backup-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+.backup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.backup-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-alt);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, background 0.2s;
+  width: 100%;
+}
+.backup-action-btn:hover { border-color: var(--brand); }
+.backup-action-icon {
+  width: 40px; height: 40px;
+  border-radius: 10px;
+  background: var(--brand-light);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.backup-action-icon svg { width: 20px; height: 20px; color: var(--brand); }
+.backup-action-title { font-size: 14px; font-weight: 600; }
+.backup-action-desc  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.backup-close-btn {
+  margin-top: 14px;
+  width: 100%;
+  padding: 11px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+}
 </style>
 <!-- ══ MODAL FOTO BUKTI (Tahap 3 #11) ══ -->
 <div id="photo-modal" role="dialog" aria-modal="true" aria-label="Foto Bukti">
@@ -2173,6 +2631,86 @@ textarea.field-input { resize:vertical; min-height:90px; }
 </head>
 <body>
 
+<!-- ══ #08 TOAST CONTAINER ══ -->
+<div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<!-- ══ #03 LICENSE SPLASH ══ -->
+<div id="license-splash" role="dialog" aria-modal="true" aria-label="Aktivasi Lisensi" style="display:none">
+  <div class="splash-box">
+    <div class="splash-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+    </div>
+    <div class="splash-title">IKL SPPG</div>
+    <div class="splash-subtitle">Inspeksi Kesehatan Lingkungan · v<span class="app-version-text">2025.1.0</span></div>
+
+    <div class="splash-tabs">
+      <button class="splash-tab active" id="tab-activate" onclick="splashSwitchTab('activate')">Aktivasi</button>
+      <button class="splash-tab"        id="tab-trial"    onclick="splashSwitchTab('trial')">Coba Gratis</button>
+    </div>
+
+    <!-- Panel: Input License Key -->
+    <div class="splash-panel active" id="panel-activate">
+      <label class="splash-input-label">Masukkan License Key</label>
+      <input type="text" id="license-key-input" class="splash-input"
+             placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+             maxlength="29" autocomplete="off" spellcheck="false">
+      <div class="splash-hint" id="license-hint">Format: 5 kelompok 5 karakter dipisah tanda hubung</div>
+      <button class="splash-btn" id="btn-activate-license" onclick="activateLicense()">Verifikasi Lisensi</button>
+    </div>
+
+    <!-- Panel: Trial -->
+    <div class="splash-panel" id="panel-trial">
+      <span class="splash-trial-badge">TRIAL 7 HARI</span>
+      <div class="splash-trial-info">
+        Coba IKL SPPG secara gratis selama <strong>7 hari</strong>.<br>
+        Maksimal <strong>10 inspeksi</strong> tersimpan.<br>
+        Laporan PDF akan menampilkan <em>watermark TRIAL</em>.
+      </div>
+      <button class="splash-btn" id="btn-start-trial" onclick="startTrial()">Mulai Trial Gratis</button>
+      <hr class="splash-divider">
+      <div class="splash-trial-info" style="font-size:11px">
+        Untuk membeli lisensi penuh, kunjungi<br>
+        <strong>ikl-sppg.pages.dev</strong>
+      </div>
+    </div>
+
+    <div class="splash-footer">
+      Dengan menggunakan aplikasi ini Anda menyetujui
+      <a href="#" onclick="return false">Syarat & Ketentuan</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ #06 BACKUP MODAL ══ -->
+<div id="backup-modal" role="dialog" aria-modal="true" aria-label="Backup dan Pulihkan Data">
+  <div class="backup-box">
+    <div class="backup-title">📦 Backup &amp; Pulihkan Data</div>
+    <div class="backup-sub">Semua data tersimpan di perangkat Anda. Backup rutin untuk mencegah kehilangan data.</div>
+    <div class="backup-actions">
+      <button class="backup-action-btn" onclick="exportBackup()">
+        <div class="backup-action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <div>
+          <div class="backup-action-title">Unduh Backup</div>
+          <div class="backup-action-desc">Ekspor semua riwayat inspeksi ke file .json</div>
+        </div>
+      </button>
+      <button class="backup-action-btn" onclick="importBackupTrigger()">
+        <div class="backup-action-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div>
+          <div class="backup-action-title">Pulihkan dari Backup</div>
+          <div class="backup-action-desc">Import file .json backup sebelumnya</div>
+        </div>
+      </button>
+    </div>
+    <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importBackupFile(this)">
+    <button class="backup-close-btn" onclick="closeBackupModal()">Tutup</button>
+  </div>
+</div>
+
 <div id="app-wrapper" role="main">
 
   <!-- ══════════ HEADER ══════════ -->
@@ -2183,6 +2721,14 @@ textarea.field-input { resize:vertical; min-height:90px; }
     </button>
     <h1>Inspeksi Kesehatan Lingkungan</h1>
     <h2>Satuan Pelayanan Pemenuhan Gizi (SPPG)</h2>
+    <!-- #05 Badge lisensi + #11 Versi -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
+      <div id="license-badge" aria-label="Status lisensi">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        <span id="license-badge-text">Aktif</span>
+      </div>
+      <span style="font-size:10px;color:var(--text-muted);opacity:.6">v<span class="app-version-text">2025.1.0</span></span>
+    </div>
     <div id="autosave-status" role="status" aria-live="polite" aria-atomic="true"></div>
   </header>
 
@@ -2502,6 +3048,16 @@ textarea.field-input { resize:vertical; min-height:90px; }
     </div>
   </div>
 
+  <!-- #07 DISCLAIMER & REFERENSI REGULASI -->
+  <div style="margin:0 16px 8px;padding:12px 14px;border-radius:10px;background:var(--surface-alt);border:1px solid var(--border);font-size:11px;color:var(--text-muted);line-height:1.6">
+    <strong style="color:var(--text-secondary)">⚠️ Catatan Penting:</strong><br>
+    Tanda tangan pada formulir ini merupakan <em>tanda tangan elektronik tidak tersertifikasi</em>
+    sesuai UU ITE No. 11/2008 dan PP No. 71/2019, digunakan untuk keperluan dokumentasi inspeksi.
+    Pastikan regulasi IKL yang digunakan telah sesuai ketentuan Kemenkes terbaru.
+    Verifikasi dengan Dinas Kesehatan setempat jika diperlukan.<br>
+    <span style="opacity:.7">Versi Formulir: v<span class="app-version-text">2025.1.0</span></span>
+  </div>
+
 </div><!-- /#app-wrapper -->
 
 <!-- ══════════ FIXED SCORE BAR ══════════ -->
@@ -2538,7 +3094,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
         </div>
       </div>
 
-      <!-- BARIS 2: 4 tombol satu baris penuh -->
+      <!-- BARIS 2: tombol aksi -->
       <div class="bar-row-actions">
         <button id="reset-form-btn" class="btn btn-solid-danger bar-btn" aria-label="Reset semua data formulir">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 109-9M3 3v4h4"/></svg>
@@ -2551,6 +3107,10 @@ textarea.field-input { resize:vertical; min-height:90px; }
         <button id="btn-open-history" class="btn btn-outline bar-btn" aria-label="Riwayat inspeksi" title="Riwayat Inspeksi">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           Riwayat
+        </button>
+        <button id="btn-backup" class="btn btn-outline bar-btn" aria-label="Backup dan pulihkan data" title="Backup Data" onclick="openBackupModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Backup
         </button>
         <button id="btn-show-qr" class="btn btn-outline bar-btn" aria-label="Tampilkan QR Code laporan" title="QR Code">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/></svg>
@@ -3008,17 +3568,40 @@ function saveUIState(type, id, state){
 // THEME
 // ═══════════════════════════════════════════════════════
 function initTheme(){
+  // initTheme sekarang hanya sebagai konfirmasi — tema sudah diterapkan
+  // oleh script anti-FOUC di <head> sebelum CSS di-parse
   const t = safeStorage.getItem(THEME_KEY);
-  if(t==='dark') document.documentElement.setAttribute('data-theme','dark');
+  if(t === 'dark' && document.documentElement.getAttribute('data-theme') !== 'dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+  }
 }
+
 function toggleTheme(){
-  const isDark = document.documentElement.getAttribute('data-theme')==='dark';
-  // Aktifkan --td (transition duration) via class di <html>
-  document.documentElement.classList.add('theme-switching');
-  document.documentElement.setAttribute('data-theme', isDark?'light':'dark');
-  safeStorage.setItem(THEME_KEY, isDark?'light':'dark');
-  // Lepas class setelah transisi selesai (350ms + buffer 50ms)
-  setTimeout(()=>document.documentElement.classList.remove('theme-switching'), 400);
+  const isDark  = document.documentElement.getAttribute('data-theme') === 'dark';
+  const newTheme = isDark ? 'light' : 'dark';
+
+  function applyTheme(){
+    document.documentElement.classList.add('theme-switching');
+    document.documentElement.setAttribute('data-theme', newTheme);
+    safeStorage.setItem(THEME_KEY, newTheme);
+    // Lepas class setelah transisi selesai (380ms + buffer 50ms)
+    setTimeout(() => document.documentElement.classList.remove('theme-switching'), 430);
+  }
+
+  // View Transition API — crossfade halus untuk Chrome 111+
+  if(document.startViewTransition) {
+    document.documentElement.classList.add('theme-switching');
+    const transition = document.startViewTransition(() => {
+      document.documentElement.setAttribute('data-theme', newTheme);
+      safeStorage.setItem(THEME_KEY, newTheme);
+    });
+    transition.finished.finally(() => {
+      document.documentElement.classList.remove('theme-switching');
+    });
+  } else {
+    // Fallback untuk browser lama: CSS transition biasa
+    applyTheme();
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -5827,8 +6410,23 @@ document.addEventListener('DOMContentLoaded', async ()=>{ try {
   // Tahap 3 #10: Init storage layer (IndexedDB + cache) sebelum apapun
   try{ await _initStorage(); } catch(e){ console.warn('Storage init error:', e); }
   initTheme();
+
+  // Sembunyikan app-wrapper saat render JS berlangsung → eliminasi FOUC
+  const appWrapper = document.getElementById('app-wrapper');
+  if(appWrapper) appWrapper.style.opacity = '0';
+
   try { renderCriteriaTable(); } catch(e){ console.error('renderCriteriaTable error:',e); }
   try { renderSpecialRequirements(); } catch(e){ console.error('renderSpecialRequirements error:',e); }
+
+  // Fade-in setelah render selesai (requestAnimationFrame pastikan paint sudah terjadi)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if(appWrapper){
+        appWrapper.style.transition = 'opacity 0.25s ease-out';
+        appWrapper.style.opacity = '1';
+      }
+    });
+  });
 
   // Event delegation
   // Delegasikan ke container wrapper table agar mencakup SEMUA tbody
@@ -5875,41 +6473,480 @@ document.addEventListener('DOMContentLoaded', async ()=>{ try {
 
   // Reset
   document.getElementById('reset-form-btn').addEventListener('click',resetForm);
+
+  // #09 Autosave via Page Visibility API
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) saveFormData();
+  });
+
+  // Inisialisasi sistem lisensi
+  initLicenseSystem();
+
   } catch(e){ console.error('App init error:',e); }
 });
+
+// ═══════════════════════════════════════════════════════════════
+// #11 NOMOR VERSI APLIKASI
+// ═══════════════════════════════════════════════════════════════
+const APP_VERSION = '2025.1.0';
+document.querySelectorAll('.app-version-text').forEach(el => el.textContent = APP_VERSION);
+
+// ═══════════════════════════════════════════════════════════════
+// #08 TOAST NOTIFICATION SYSTEM
+// ═══════════════════════════════════════════════════════════════
+const TOAST_ICONS = {
+  success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+};
+
+function showToast(msg, type = 'info', duration = 4000) {
+  const container = document.getElementById('toast-container');
+  if(!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `
+    <span class="toast-icon">${TOAST_ICONS[type] || TOAST_ICONS.info}</span>
+    <span class="toast-msg">${msg}</span>
+    <span class="toast-close" onclick="this.parentElement.remove()">×</span>`;
+  toast.addEventListener('click', () => dismissToast(toast));
+  container.appendChild(toast);
+  const timer = setTimeout(() => dismissToast(toast), duration);
+  toast._timer = timer;
+}
+
+function dismissToast(toast) {
+  if(!toast || !toast.parentElement) return;
+  clearTimeout(toast._timer);
+  toast.classList.add('toast-hiding');
+  toast.addEventListener('animationend', () => toast.remove(), { once: true });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// #03 + #04 + #05 SISTEM LISENSI OFFLINE (HMAC-SHA256)
+// ═══════════════════════════════════════════════════════════════
+const LICENSE_KEY     = 'ikl_license_v1';
+const TRIAL_KEY       = 'ikl_trial_v1';
+const INSPECT_COUNT_KEY = 'ikl_inspect_count_v1';
+const TRIAL_MAX_DAYS  = 7;
+const TRIAL_MAX_INSP  = 10;
+
+// Secret direkonstruksi runtime — obfuscation layer dasar
+const _s1 = 'IKL', _s2 = 'SPPG', _s3 = '2025';
+const _s4 = [75,33,97,121,49,52].map(c=>String.fromCharCode(c)).join('');
+const _SECRET = _s1 + _s2 + _s3 + _s4;
+
+// HMAC-SHA256 murni JavaScript (tanpa library)
+async function hmacSha256(message, secret) {
+  const enc = new TextEncoder();
+  const keyData = enc.encode(secret);
+  const msgData = enc.encode(message);
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Format key: PUSK25-AAAAA-BBBBB-CCCCC-DDDDDDD
+// Encoded: [inst_hash(5)][exp_date(8)][pkg(1)][issue(8)] = 22 chars → split 5-5-5-7
+async function verifyLicenseKey(rawKey) {
+  const key = rawKey.replace(/\s/g, '').toUpperCase();
+  const parts = key.split('-');
+  if(parts.length !== 5) return { valid: false, reason: 'Format key tidak valid' };
+
+  const prefix  = parts[0];   // e.g. PUSK25
+  const encoded = parts[1] + parts[2] + parts[3]; // 15 chars data
+  const checksum = parts[4];  // 7 chars HMAC
+
+  // Verifikasi HMAC
+  const fullHmac = await hmacSha256(prefix + encoded, _SECRET);
+  const expected = fullHmac.slice(0, 7).toUpperCase();
+  if(checksum !== expected) return { valid: false, reason: 'Key tidak valid atau sudah diubah' };
+
+  // Decode expired date (chars 5-12 = YYYYMMDD)
+  const expStr = encoded.slice(5, 13);
+  const expDate = new Date(
+    parseInt(expStr.slice(0,4)),
+    parseInt(expStr.slice(4,6)) - 1,
+    parseInt(expStr.slice(6,8))
+  );
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  if(isNaN(expDate.getTime())) return { valid: false, reason: 'Format tanggal dalam key tidak valid' };
+  if(expDate < today) return { valid: false, reason: `Lisensi expired sejak ${formatDateID(expDate)}` };
+
+  // Hitung sisa hari
+  const diffMs   = expDate - today;
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const instCode = encoded.slice(0, 5);
+
+  return { valid: true, expDate, diffDays, instCode, prefix, key };
+}
+
+function formatDateID(date) {
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function getLicenseState() {
+  try {
+    const raw = safeStorage.getItem(LICENSE_KEY);
+    if(raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function getTrialState() {
+  try {
+    const raw = safeStorage.getItem(TRIAL_KEY);
+    if(raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+async function activateLicense() {
+  const input  = document.getElementById('license-key-input');
+  const hint   = document.getElementById('license-hint');
+  const btn    = document.getElementById('btn-activate-license');
+  const rawKey = input.value.trim();
+
+  if(!rawKey) {
+    hint.textContent = 'Masukkan license key terlebih dahulu';
+    hint.className = 'splash-hint hint-error';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Memverifikasi...';
+  hint.textContent = '';
+  hint.className = 'splash-hint';
+
+  const result = await verifyLicenseKey(rawKey);
+
+  if(!result.valid) {
+    input.classList.add('input-error');
+    hint.textContent = result.reason;
+    hint.className = 'splash-hint hint-error';
+    btn.disabled = false;
+    btn.textContent = 'Verifikasi Lisensi';
+    return;
+  }
+
+  // Simpan state lisensi
+  const licenseState = {
+    key: result.key,
+    expDate: result.expDate.toISOString(),
+    instCode: result.instCode,
+    activatedAt: new Date().toISOString(),
+  };
+  safeStorage.setItem(LICENSE_KEY, JSON.stringify(licenseState));
+
+  input.classList.remove('input-error');
+  input.classList.add('input-ok');
+  hint.textContent = `✓ Lisensi valid hingga ${formatDateID(result.expDate)}`;
+  hint.className = 'splash-hint hint-ok';
+
+  setTimeout(() => {
+    hideSplash();
+    updateLicenseBadge();
+    showToast(`Lisensi aktif hingga ${formatDateID(result.expDate)} ✓`, 'success', 5000);
+  }, 800);
+}
+
+function startTrial() {
+  const existing = getTrialState();
+  if(existing) { hideSplash(); updateLicenseBadge(); return; }
+
+  const trialState = {
+    startDate: new Date().toISOString(),
+    inspCount: 0,
+  };
+  safeStorage.setItem(TRIAL_KEY, JSON.stringify(trialState));
+  safeStorage.setItem(INSPECT_COUNT_KEY, '0');
+  hideSplash();
+  updateLicenseBadge();
+  showToast('Trial 7 hari dimulai. Nikmati IKL SPPG!', 'info', 4000);
+}
+
+function hideSplash() {
+  const splash = document.getElementById('license-splash');
+  if(!splash) return;
+  splash.classList.add('splash-hiding');
+  setTimeout(() => { splash.style.display = 'none'; }, 400);
+}
+
+function showSplash() {
+  const splash = document.getElementById('license-splash');
+  if(!splash) return;
+  splash.style.display = 'flex';
+  splash.classList.remove('splash-hiding');
+}
+
+function splashSwitchTab(tab) {
+  document.querySelectorAll('.splash-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.splash-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById(`panel-${tab}`).classList.add('active');
+}
+
+// Auto-format key input: tambah tanda hubung otomatis
+function setupKeyInput() {
+  const input = document.getElementById('license-key-input');
+  if(!input) return;
+  input.addEventListener('input', function() {
+    let val = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    let formatted = '';
+    for(let i = 0; i < val.length && i < 25; i++) {
+      if(i > 0 && i % 5 === 0) formatted += '-';
+      formatted += val[i];
+    }
+    this.value = formatted;
+    this.classList.remove('input-error', 'input-ok');
+    document.getElementById('license-hint').textContent = '';
+    document.getElementById('license-hint').className = 'splash-hint';
+  });
+  input.addEventListener('keydown', function(e) {
+    if(e.key === 'Enter') activateLicense();
+  });
+}
+
+// #05 Update badge lisensi di header
+function updateLicenseBadge() {
+  const badge    = document.getElementById('license-badge');
+  const badgeTxt = document.getElementById('license-badge-text');
+  if(!badge || !badgeTxt) return;
+
+  const lic   = getLicenseState();
+  const trial = getTrialState();
+
+  if(lic) {
+    const expDate = new Date(lic.expDate);
+    const today   = new Date(); today.setHours(0,0,0,0);
+    const diffMs  = expDate - today;
+    const diffDays = Math.ceil(diffMs / (1000*60*60*24));
+
+    if(diffDays <= 0) {
+      badgeTxt.textContent = 'Lisensi Expired';
+      badge.className = 'badge-active badge-expiring';
+    } else if(diffDays <= 14) {
+      badgeTxt.textContent = `Exp ${diffDays}h lagi`;
+      badge.className = 'badge-active badge-expiring';
+    } else {
+      badgeTxt.textContent = `Aktif s/d ${formatDateID(expDate)}`;
+      badge.className = 'badge-active';
+    }
+  } else if(trial) {
+    const startDate = new Date(trial.startDate);
+    const today     = new Date(); today.setHours(0,0,0,0);
+    const diffDays  = TRIAL_MAX_DAYS - Math.floor((today - startDate)/(1000*60*60*24));
+    badgeTxt.textContent = diffDays > 0 ? `Trial ${diffDays}h` : 'Trial Expired';
+    badge.className = 'badge-active badge-trial';
+  }
+}
+
+// Cek reminder expired
+function checkLicenseReminders() {
+  const lic = getLicenseState();
+  if(!lic) return;
+  const expDate = new Date(lic.expDate);
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const diffDays = Math.ceil((expDate - today) / (1000*60*60*24));
+
+  if(diffDays <= 0) {
+    showToast('⚠️ Lisensi Anda sudah expired. Segera perpanjang untuk melanjutkan.', 'warning', 10000);
+  } else if(diffDays === 1) {
+    showToast('⚠️ Lisensi berakhir BESOK. Segera perpanjang!', 'warning', 8000);
+  } else if(diffDays === 7) {
+    showToast(`Lisensi berakhir dalam 7 hari (${formatDateID(expDate)}). Segera perpanjang.`, 'info', 6000);
+  } else if(diffDays === 30) {
+    showToast(`Lisensi berakhir dalam 30 hari (${formatDateID(expDate)}).`, 'info', 5000);
+  }
+}
+
+// Inisialisasi sistem lisensi
+function initLicenseSystem() {
+  setupKeyInput();
+
+  const lic   = getLicenseState();
+  const trial = getTrialState();
+
+  if(lic) {
+    // Ada lisensi — verifikasi expired
+    const expDate = new Date(lic.expDate);
+    const today   = new Date(); today.setHours(0,0,0,0);
+    if(expDate >= today) {
+      // Lisensi valid
+      updateLicenseBadge();
+      setTimeout(checkLicenseReminders, 2000);
+      return;
+    }
+    // Expired — tampilkan splash dengan pesan
+    showSplash();
+    showToast('Lisensi Anda telah expired. Silakan perpanjang.', 'warning', 0);
+    return;
+  }
+
+  if(trial) {
+    // Ada trial — cek expired
+    const startDate = new Date(trial.startDate);
+    const today     = new Date(); today.setHours(0,0,0,0);
+    const dayUsed   = Math.floor((today - startDate)/(1000*60*60*24));
+    if(dayUsed < TRIAL_MAX_DAYS) {
+      updateLicenseBadge();
+      return;
+    }
+    // Trial habis
+    showSplash();
+    showToast('Periode trial telah berakhir. Aktifkan lisensi untuk melanjutkan.', 'warning', 0);
+    return;
+  }
+
+  // Belum ada lisensi maupun trial → tampilkan splash
+  showSplash();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// #06 EKSPOR / IMPOR DATABASE RIWAYAT (JSON)
+// ═══════════════════════════════════════════════════════════════
+function openBackupModal() {
+  document.getElementById('backup-modal').classList.add('open');
+}
+function closeBackupModal() {
+  document.getElementById('backup-modal').classList.remove('open');
+}
+
+async function exportBackup() {
+  try {
+    closeBackupModal();
+    showToast('Menyiapkan backup...', 'info', 2000);
+
+    const history = await _idb.getAllHistory();
+    const licState = getLicenseState();
+    const trialState = getTrialState();
+
+    const backup = {
+      _meta: {
+        app: 'IKL SPPG',
+        version: APP_VERSION,
+        exportedAt: new Date().toISOString(),
+        totalInspeksi: history.length,
+      },
+      history: history,
+      license: licState,
+      trial: trialState,
+    };
+
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    a.href     = url;
+    a.download = `ikl_sppg_backup_${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // Catat waktu backup terakhir
+    safeStorage.setItem('ikl_last_backup', new Date().toISOString());
+    showToast(`Backup berhasil! ${history.length} inspeksi tersimpan.`, 'success', 5000);
+  } catch(err) {
+    showToast('Gagal membuat backup: ' + err.message, 'error', 6000);
+  }
+}
+
+function importBackupTrigger() {
+  document.getElementById('import-file-input').click();
+}
+
+async function importBackupFile(input) {
+  const file = input.files[0];
+  if(!file) return;
+  input.value = '';
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+
+      // Validasi format
+      if(!data._meta || !data.history || !Array.isArray(data.history)) {
+        showToast('File tidak valid. Pastikan Anda memilih file backup IKL SPPG.', 'error', 6000);
+        return;
+      }
+
+      const count = data.history.length;
+      const date  = data._meta.exportedAt
+        ? new Date(data._meta.exportedAt).toLocaleDateString('id-ID')
+        : 'tidak diketahui';
+
+      const ok = confirm(
+        `Pulihkan ${count} inspeksi dari backup tanggal ${date}?\n\n` +
+        `PERHATIAN: Data riwayat yang ada saat ini akan DIGABUNG dengan backup (tidak dihapus).`
+      );
+      if(!ok) return;
+
+      closeBackupModal();
+      showToast('Memulihkan data...', 'info', 3000);
+
+      let imported = 0;
+      for(const item of data.history) {
+        try {
+          await _idb.saveHistory(item);
+          imported++;
+        } catch(e) { /* skip duplicate */ }
+      }
+
+      // Pulihkan info lisensi jika di device baru (belum ada lisensi)
+      if(data.license && !getLicenseState()) {
+        safeStorage.setItem(LICENSE_KEY, JSON.stringify(data.license));
+        updateLicenseBadge();
+      }
+
+      showToast(`Berhasil memulihkan ${imported} dari ${count} inspeksi.`, 'success', 6000);
+    } catch(err) {
+      showToast('File rusak atau format tidak dikenal: ' + err.message, 'error', 6000);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// #07 DISCLAIMER — tampilkan di console untuk audit
+console.info(
+  '%c IKL SPPG v' + APP_VERSION + '\n' +
+  'Ref regulasi: Permenkes & pedoman teknis yang berlaku.\n' +
+  'Tanda tangan canvas = tanda tangan elektronik tidak tersertifikasi (UU ITE).\n' +
+  'Verifikasi regulasi terbaru dengan Dinkes setempat.',
+  'color:#2D5A3D;font-weight:bold'
+);
 </script>
 
 <!-- ══════════ PWA: SERVICE WORKER REGISTRATION ══════════ -->
 <script>
-(function registerSW() {
-  if (!('serviceWorker' in navigator)) return;
-
+(function registerSW(){
+  if(!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => {
-        console.log('[SW] Terdaftar, scope:', reg.scope);
-
-        // Cek update SW saat app dibuka
         reg.addEventListener('updatefound', () => {
           const newSW = reg.installing;
           newSW.addEventListener('statechange', () => {
-            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-              // Ada versi baru — tampilkan notifikasi update (jika fungsi showToast tersedia)
-              if (typeof showToast === 'function') {
-                showToast('Versi baru tersedia. Tutup dan buka kembali app untuk update.', 'info', 8000);
-              } else {
-                console.log('[SW] Versi baru tersedia, silakan refresh.');
-              }
+            if(newSW.state === 'installed' && navigator.serviceWorker.controller){
+              if(typeof showToast === 'function')
+                showToast('Versi baru tersedia. Tutup & buka kembali app untuk update.','info',8000);
             }
           });
         });
       })
       .catch(err => console.warn('[SW] Registrasi gagal:', err));
 
-    // Deteksi saat SW baru mengambil alih → reload otomatis
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!refreshing) { refreshing = true; window.location.reload(); }
+      if(!refreshing){ refreshing = true; window.location.reload(); }
     });
   });
 })();
