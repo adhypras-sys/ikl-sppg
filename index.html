@@ -2641,7 +2641,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
     </div>
     <div class="splash-title">IKL SPPG</div>
-    <div class="splash-subtitle">Inspeksi Kesehatan Lingkungan · v<span class="app-version-text">2025.1.0</span></div>
+    <div class="splash-subtitle">Inspeksi Kesehatan Lingkungan · v<span class="app-version-text">2026.1.0</span></div>
 
     <div class="splash-tabs">
       <button class="splash-tab active" id="tab-activate" onclick="splashSwitchTab('activate')">Aktivasi</button>
@@ -2727,7 +2727,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
         <span id="license-badge-text">Aktif</span>
       </div>
-      <span style="font-size:10px;color:var(--text-muted);opacity:.6">v<span class="app-version-text">2025.1.0</span></span>
+      <span style="font-size:10px;color:var(--text-muted);opacity:.6">v<span class="app-version-text">2026.1.0</span></span>
     </div>
     <div id="autosave-status" role="status" aria-live="polite" aria-atomic="true"></div>
   </header>
@@ -3055,7 +3055,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
     sesuai UU ITE No. 11/2008 dan PP No. 71/2019, digunakan untuk keperluan dokumentasi inspeksi.
     Pastikan regulasi IKL yang digunakan telah sesuai ketentuan Kemenkes terbaru.
     Verifikasi dengan Dinas Kesehatan setempat jika diperlukan.<br>
-    <span style="opacity:.7">Versi Formulir: v<span class="app-version-text">2025.1.0</span></span>
+    <span style="opacity:.7">Versi Formulir: v<span class="app-version-text">2026.1.0</span></span>
   </div>
 
 </div><!-- /#app-wrapper -->
@@ -6488,7 +6488,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{ try {
 // ═══════════════════════════════════════════════════════════════
 // #11 NOMOR VERSI APLIKASI
 // ═══════════════════════════════════════════════════════════════
-const APP_VERSION = '2025.1.0';
+const APP_VERSION = '2026.1.0';
 document.querySelectorAll('.app-version-text').forEach(el => el.textContent = APP_VERSION);
 
 // ═══════════════════════════════════════════════════════════════
@@ -6526,14 +6526,26 @@ function dismissToast(toast) {
 // ═══════════════════════════════════════════════════════════════
 // #03 + #04 + #05 SISTEM LISENSI OFFLINE (HMAC-SHA256)
 // ═══════════════════════════════════════════════════════════════
-const LICENSE_KEY     = 'ikl_license_v1';
-const TRIAL_KEY       = 'ikl_trial_v1';
+const LICENSE_KEY       = 'ikl_license_v1';
+const TRIAL_KEY         = 'ikl_trial_v1';
 const INSPECT_COUNT_KEY = 'ikl_inspect_count_v1';
-const TRIAL_MAX_DAYS  = 7;
-const TRIAL_MAX_INSP  = 10;
+const TRIAL_MAX_DAYS    = 7;
+const TRIAL_MAX_INSP    = 10;
+
+// ── DEV MODE & BETA CONFIG ────────────────────────────────────
+// Secret URL param untuk developer: ?dev=IKL2026DEV
+// Beta key universal untuk tester: BETA0-BETA0-BETA0-BETA0-BETAOK
+const _DEV_PARAM    = 'IKL2026DEV';
+const _BETA_KEY     = 'BETA0-BETA0-BETA0-BETA0-BETAOK';
+const _BETA_EXPIRED = new Date('2026-12-31');   // ubah setiap tahun
+
+// Cek URL params sekali saat load
+const _urlParams = new URLSearchParams(window.location.search);
+const _isDevMode = _urlParams.get('dev') === _DEV_PARAM
+                   || sessionStorage.getItem('ikl_dev_mode') === '1';
 
 // Secret direkonstruksi runtime — obfuscation layer dasar
-const _s1 = 'IKL', _s2 = 'SPPG', _s3 = '2025';
+const _s1 = 'IKL', _s2 = 'SPPG', _s3 = '2026';
 const _s4 = [75,33,97,121,49,52].map(c=>String.fromCharCode(c)).join('');
 const _SECRET = _s1 + _s2 + _s3 + _s4;
 
@@ -6554,6 +6566,24 @@ async function hmacSha256(message, secret) {
 // Encoded: [inst_hash(5)][exp_date(8)][pkg(1)][issue(8)] = 22 chars → split 5-5-5-7
 async function verifyLicenseKey(rawKey) {
   const key = rawKey.replace(/\s/g, '').toUpperCase();
+
+  // ── BETA KEY: universal untuk semua beta tester ───────────
+  if(key === _BETA_KEY) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    if(_BETA_EXPIRED < today) {
+      return { valid: false, reason: 'Beta key sudah expired. Hubungi developer untuk key baru.' };
+    }
+    return {
+      valid: true,
+      expDate: _BETA_EXPIRED,
+      diffDays: Math.ceil((_BETA_EXPIRED - today) / (1000*60*60*24)),
+      instCode: 'BETA0',
+      prefix: 'BETA0',
+      key,
+      isBeta: true,
+    };
+  }
+
   const parts = key.split('-');
   if(parts.length !== 5) return { valid: false, reason: 'Format key tidak valid' };
 
@@ -6642,6 +6672,7 @@ async function activateLicense() {
     expDate: result.expDate.toISOString(),
     instCode: result.instCode,
     activatedAt: new Date().toISOString(),
+    isBeta: result.isBeta || false,
   };
   safeStorage.setItem(LICENSE_KEY, JSON.stringify(licenseState));
 
@@ -6714,6 +6745,16 @@ function setupKeyInput() {
   });
 }
 
+// Dev mode badge — merah mencolok agar tidak lupa sedang di dev mode
+function applyDevModeBadge() {
+  const badge    = document.getElementById('license-badge');
+  const badgeTxt = document.getElementById('license-badge-text');
+  if(!badge || !badgeTxt) return;
+  badgeTxt.textContent = '⚙ DEV MODE';
+  badge.className = 'badge-active';
+  badge.style.cssText = 'display:flex;background:rgba(239,68,68,.15);border-color:#ef4444;color:#b91c1c';
+}
+
 // #05 Update badge lisensi di header
 function updateLicenseBadge() {
   const badge    = document.getElementById('license-badge');
@@ -6728,6 +6769,13 @@ function updateLicenseBadge() {
     const today   = new Date(); today.setHours(0,0,0,0);
     const diffMs  = expDate - today;
     const diffDays = Math.ceil(diffMs / (1000*60*60*24));
+
+    // Cek apakah ini beta key
+    if(lic.isBeta) {
+      badgeTxt.textContent = `🧪 Beta s/d ${formatDateID(expDate)}`;
+      badge.className = 'badge-active badge-trial';
+      return;
+    }
 
     if(diffDays <= 0) {
       badgeTxt.textContent = 'Lisensi Expired';
@@ -6771,41 +6819,62 @@ function checkLicenseReminders() {
 function initLicenseSystem() {
   setupKeyInput();
 
-  const lic   = getLicenseState();
-  const trial = getTrialState();
+  // ── LAPISAN 0: RESET param (?reset_license=1) ─────────────
+  // Untuk testing berulang — hapus lisensi tanpa hapus data inspeksi
+  if(_urlParams.get('reset_license') === '1') {
+    safeStorage.removeItem(LICENSE_KEY);
+    safeStorage.removeItem(TRIAL_KEY);
+    safeStorage.removeItem(INSPECT_COUNT_KEY);
+    // Bersihkan URL tanpa reload
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+    showToast('Data lisensi dihapus. Silakan aktivasi ulang.', 'info', 4000);
+    showSplash();
+    return;
+  }
 
+  // ── LAPISAN 1: DEV MODE (?dev=IKL2026DEV) ─────────────────
+  if(_isDevMode) {
+    sessionStorage.setItem('ikl_dev_mode', '1');
+    // Bersihkan URL agar param tidak terlihat di history
+    if(_urlParams.has('dev')) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    applyDevModeBadge();
+    return; // Langsung masuk, tidak perlu lisensi
+  }
+
+  // ── LAPISAN 2: LISENSI AKTIF ──────────────────────────────
+  const lic = getLicenseState();
   if(lic) {
-    // Ada lisensi — verifikasi expired
     const expDate = new Date(lic.expDate);
     const today   = new Date(); today.setHours(0,0,0,0);
     if(expDate >= today) {
-      // Lisensi valid
       updateLicenseBadge();
       setTimeout(checkLicenseReminders, 2000);
       return;
     }
-    // Expired — tampilkan splash dengan pesan
     showSplash();
     showToast('Lisensi Anda telah expired. Silakan perpanjang.', 'warning', 0);
     return;
   }
 
+  // ── LAPISAN 3: TRIAL AKTIF ────────────────────────────────
+  const trial = getTrialState();
   if(trial) {
-    // Ada trial — cek expired
     const startDate = new Date(trial.startDate);
     const today     = new Date(); today.setHours(0,0,0,0);
-    const dayUsed   = Math.floor((today - startDate)/(1000*60*60*24));
+    const dayUsed   = Math.floor((today - startDate) / (1000*60*60*24));
     if(dayUsed < TRIAL_MAX_DAYS) {
       updateLicenseBadge();
       return;
     }
-    // Trial habis
     showSplash();
     showToast('Periode trial telah berakhir. Aktifkan lisensi untuk melanjutkan.', 'warning', 0);
     return;
   }
 
-  // Belum ada lisensi maupun trial → tampilkan splash
+  // ── TIDAK ADA: tampilkan splash ───────────────────────────
   showSplash();
 }
 

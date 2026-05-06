@@ -1,12 +1,12 @@
 /**
  * Service Worker — IKL SPPG
- * Versi : 2025.1.0
+ * Versi : 2026.1.0
  * Strategi: Cache-First untuk aset app
  * Yang di-cache SW  : index.html (seluruh app)
  * Yang TIDAK di-cache: IndexedDB (data inspeksi) — dikelola app langsung
  */
 
-const CACHE_NAME = 'ikl-sppg-v2025.1.0';
+const CACHE_NAME = 'ikl-sppg-v2026.1.0';
 const APP_SHELL  = ['/', '/index.html'];
 
 /* ── INSTALL: cache aset app ──────────────────────────────────────── */
