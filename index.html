@@ -239,6 +239,17 @@ body,
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ── #21 VISUAL SEVERITY FLASH ──────────────────────────────── */
+@keyframes severity-flash {
+  0%   { box-shadow: 0 0 0 0   rgba(220,38,38,0); }
+  25%  { box-shadow: 0 0 0 3px rgba(220,38,38,0.55); }
+  60%  { box-shadow: 0 0 0 5px rgba(220,38,38,0.20); }
+  100% { box-shadow: 0 0 0 0   rgba(220,38,38,0); }
+}
+.ikl-card.severity-flash {
+  animation: severity-flash 0.55s cubic-bezier(0.4,0,0.6,1) forwards;
+}
+
 /* ── VIEW TRANSITION API — crossfade tema halus (Chrome 111+) ────── */
 ::view-transition-old(root) {
   animation: none;
@@ -251,8 +262,14 @@ body,
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-/* Pastikan transition tidak conflict dengan animasi lain */
-html.theme-switching * {
+/* Pastikan transition tema tidak conflict — hanya override delay pada elemen UI,
+   bukan pada animasi seperti accordion, modal, progress bar */
+html.theme-switching body,
+html.theme-switching .section-card,
+html.theme-switching .field-input,
+html.theme-switching #fixed-score-bar,
+html.theme-switching .ikl-card,
+html.theme-switching .modal-box {
   transition-delay: 0ms !important;
 }
 
@@ -455,15 +472,27 @@ h4,h5,h6,p,span,label,input,textarea,button,td,th { font-family: var(--font-body
 }
 .section-chevron.open { transform:rotate(180deg); color:var(--brand); }
 
-/* Collapsible body */
+/* Collapsible body — CSS Grid approach (60fps, tanpa scrollHeight calculation)
+   Struktur HTML: .section-body > .section-body-inner (min-height:0)
+   Animasi: grid-template-rows: 0fr ↔ 1fr                              */
 .section-body {
-  overflow:hidden;
-  transition: max-height var(--dur-slow) var(--ease-out),
-              opacity var(--dur-base) ease;
-  opacity:1;
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-slow) var(--ease-out),
+              opacity            var(--dur-base) ease;
+  opacity: 1;
+  overflow: hidden;
 }
-.section-body.collapsed { max-height:0!important; opacity:0; }
-.section-body-inner { padding:0 18px 18px; }
+.section-body.collapsed {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+/* Inner wrapper WAJIB ada min-height:0 agar grid collapse bekerja */
+.section-body-inner {
+  min-height: 0;
+  padding: 0 18px 18px;
+  overflow: hidden;
+}
 
 /* ═══════════════════════════════════════════════════════
    FORM INPUTS
@@ -1032,7 +1061,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
 /* Legacy aliases */
 .bar-col { min-width: 0; }
 .bar-col-actions { flex-shrink: 0; }
-.bar-btn-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.bar-btn-grid { display:grid; grid-template-columns: repeat(5,1fr); gap:6px; }
 .bar-score-center { flex:1; }
 .bar-actions { display:flex; gap:8px; margin-top:8px; }
 .bar-left { flex:1; display:flex; flex-direction:column; gap:0; min-width:0; }
@@ -1969,7 +1998,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
   body { padding-bottom:0!important; background:white!important; color:black!important; }
   #app-wrapper { padding:0!important; }
   .section-card { box-shadow:none!important; border:1px solid #ccc!important; break-inside:avoid; }
-  .section-body.collapsed { max-height:none!important; opacity:1!important; }
+  .section-body.collapsed { grid-template-rows: 1fr !important; opacity:1!important; }
   /* Semua pakai card layout, tabel tidak dipakai */
   #inspection-table-wrap, #special-req-table-wrap { display:none!important; }
   #inspection-cards-wrap, #special-req-cards-wrap { display:block!important; }
@@ -2057,14 +2086,77 @@ textarea.field-input { resize:vertical; min-height:90px; }
   .section-hdr { padding: 12px 16px; }
   .section-body-inner { padding: 0 16px 14px; }
   .stats-grid { grid-template-columns: repeat(4,1fr); }
-  .bar-btn-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .bar-btn-grid { grid-template-columns: repeat(5,1fr); gap: 4px; }
   .bar-btn { padding: 5px 6px; font-size: 10px; }
   .btn { padding: 7px 12px; font-size: 12px; }
 }
 
 /* ═══════════════════════════════════════════════════════
-   #08 TOAST NOTIFICATION SYSTEM
+   #14 LOADING PROGRESS BAR (first render indicator)
 ═══════════════════════════════════════════════════════ */
+#app-load-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  background: var(--brand);
+  z-index: 10001;
+  width: 0%;
+  transition: width 0.4s ease, opacity 0.3s ease;
+  border-radius: 0 2px 2px 0;
+}
+#app-load-bar.done {
+  width: 100%;
+  opacity: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   #15 KONFIRMASI RESET — modal custom dengan countdown
+═══════════════════════════════════════════════════════ */
+#reset-confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  background: rgba(0,0,0,.55);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#reset-confirm-modal.open { display: flex; }
+.reset-confirm-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  box-shadow: 0 8px 40px rgba(0,0,0,.18);
+}
+.reset-confirm-icon {
+  width: 52px; height: 52px;
+  background: var(--danger-light);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.reset-confirm-icon svg { width: 26px; height: 26px; color: var(--danger); }
+.reset-confirm-title {
+  font-size: 17px; font-weight: 700;
+  color: var(--text-primary); margin-bottom: 8px;
+}
+.reset-confirm-desc {
+  font-size: 13px; color: var(--text-secondary);
+  line-height: 1.5; margin-bottom: 20px;
+}
+.reset-confirm-actions {
+  display: flex; gap: 10px;
+}
+.reset-confirm-actions .btn { flex: 1; padding: 11px; }
+#reset-countdown {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
 #toast-container {
   position: fixed;
   bottom: 80px;        /* di atas score bar */
@@ -2519,6 +2611,24 @@ textarea.field-input { resize:vertical; min-height:90px; }
       <h3>&#x1F4CB; Riwayat Inspeksi</h3>
       <button id="history-modal-close" class="btn btn-outline" style="padding:5px 12px;font-size:12px;" type="button">Tutup</button>
     </div>
+    <!-- #20 Search bar -->
+    <div style="padding:10px 14px 0;border-bottom:1px solid var(--border)">
+      <div style="position:relative">
+        <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);pointer-events:none"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="search" id="history-search" placeholder="Cari nama SPPG atau tanggal..."
+               style="width:100%;padding:8px 10px 8px 32px;border:1.5px solid var(--border);
+                      border-radius:8px;font-size:13px;background:var(--surface-alt);
+                      color:var(--text-primary);box-sizing:border-box;outline:none;
+                      transition:border-color 0.2s"
+               oninput="filterHistoryList(this.value)"
+               onfocus="this.style.borderColor='var(--brand)'"
+               onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div id="history-count" style="font-size:11px;color:var(--text-muted);padding:6px 2px 8px;min-height:20px"></div>
+    </div>
     <div class="history-modal-body" id="history-list">
       <div class="history-empty">Belum ada riwayat tersimpan.</div>
     </div>
@@ -2620,9 +2730,38 @@ textarea.field-input { resize:vertical; min-height:90px; }
   window.addEventListener('unhandledrejection', function(e){
     var reason = e.reason;
     var msg = reason instanceof Error ? reason.message : String(reason);
-    // Abaikan SecurityError dari localStorage di sandboxed context
-    if(msg && (msg.indexOf('SecurityError') >= 0 || msg.indexOf('localStorage') >= 0)) return;
-    e.preventDefault(); // suppress dari console
+
+    // Abaikan error yang sudah di-handle atau tidak actionable:
+    // 1. SecurityError dari localStorage di sandboxed/private context
+    if(msg && (msg.indexOf('SecurityError') >= 0 || msg.indexOf('localStorage') >= 0)){
+      e.preventDefault(); return;
+    }
+    // 2. AbortError dari fetch timeout (update checker, geolocation)
+    if(reason && reason.name === 'AbortError'){
+      e.preventDefault(); return;
+    }
+    // 3. TypeError dari console.debug/console.log yang tidak tersedia
+    if(msg && msg.indexOf('console.') >= 0 && msg.indexOf('is not a function') >= 0){
+      e.preventDefault(); return;
+    }
+    // 4. SW registration errors (non app-bound domain, HTTPS required, dll)
+    if(msg && (msg.indexOf('non app-bound') >= 0 || msg.indexOf('Job rejected') >= 0 ||
+               msg.indexOf('ServiceWorker') >= 0 || msg.indexOf('serviceWorker') >= 0)){
+      e.preventDefault(); return;
+    }
+    // 5. Error dari context file:// atau srcdoc:// (bukan dari server kita)
+    if(typeof window !== 'undefined' &&
+       (window.location.protocol === 'file:' ||
+        window.location.href.indexOf('about:srcdoc') >= 0 ||
+        window.location.href.indexOf('about:blank') >= 0)){
+      e.preventDefault(); return;
+    }
+    // 6. Script error generik (cross-origin, tidak actionable)
+    if(!msg || msg === 'Script error.' || msg === 'Script error' || msg === 'undefined'){
+      e.preventDefault(); return;
+    }
+
+    e.preventDefault();
     var stack = reason instanceof Error ? reason.stack : '';
     showErrorOverlay('Unhandled Promise: ' + msg, '', '', '', {stack: stack||''});
   });
@@ -2630,6 +2769,28 @@ textarea.field-input { resize:vertical; min-height:90px; }
 </script>
 </head>
 <body>
+
+<!-- ══ #14 APP LOADING BAR ══ -->
+<div id="app-load-bar"></div>
+
+<!-- ══ #15 RESET CONFIRM MODAL ══ -->
+<div id="reset-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="reset-confirm-title">
+  <div class="reset-confirm-box">
+    <div class="reset-confirm-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="reset-confirm-title" id="reset-confirm-title">Reset Semua Data?</div>
+    <div class="reset-confirm-desc">
+      Semua isian formulir akan <strong>dihapus permanen</strong>.<br>
+      Riwayat inspeksi yang tersimpan tidak terpengaruh.<br><br>
+      Tombol aktif dalam <span id="reset-countdown">5</span> detik.
+    </div>
+    <div class="reset-confirm-actions">
+      <button class="btn btn-outline" id="reset-cancel-btn" onclick="closeResetModal()" type="button">Batal</button>
+      <button class="btn btn-solid-danger" id="reset-proceed-btn" onclick="executeReset()" disabled type="button">Ya, Reset</button>
+    </div>
+  </div>
+</div>
 
 <!-- ══ #08 TOAST CONTAINER ══ -->
 <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
@@ -2945,7 +3106,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
       </div>
       <svg class="section-chevron" id="chev-sec-d" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
     </div>
-    <div class="section-body collapsed" id="sec-d" style="max-height:0">
+    <div class="section-body collapsed" id="sec-d">
       <div class="section-body-inner">
         <div id="special-req-table-wrap">
           <table class="ikl-table">
@@ -2976,7 +3137,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
       </div>
       <svg class="section-chevron" id="chev-sec-e" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
     </div>
-    <div class="section-body collapsed" id="sec-e" style="max-height:0">
+    <div class="section-body collapsed" id="sec-e">
       <div class="section-body-inner">
         <div class="field-group">
           <label class="field-label">Catatan dan Saran</label>
@@ -3888,32 +4049,27 @@ function toggleSection(id){
   const chev = document.getElementById('chev-'+id);
   const hdr  = document.getElementById('hdr-'+id);
   const isOpen = !body.classList.contains('collapsed');
+
   if(isOpen){
-    body.style.maxHeight = body.scrollHeight+'px';
-    requestAnimationFrame(()=>{
-      body.style.maxHeight = '0';
-      body.classList.add('collapsed');
-      if(chev) chev.classList.remove('open');
-      if(hdr)  hdr.setAttribute('aria-expanded','false');
-    });
+    // Tutup: grid-template-rows → 0fr (tidak perlu set maxHeight)
+    body.classList.add('collapsed');
+    if(chev) chev.classList.remove('open');
+    if(hdr)  hdr.setAttribute('aria-expanded','false');
     saveUIState('sections', id, true);
   } else {
+    // Buka: grid-template-rows → 1fr
     body.classList.remove('collapsed');
-    body.style.maxHeight = body.scrollHeight+'px';
     if(chev) chev.classList.add('open');
     if(hdr)  hdr.setAttribute('aria-expanded','true');
-    setTimeout(()=>{ body.style.maxHeight='none'; }, 400);
     saveUIState('sections', id, false);
-    // Scroll header section ke paling atas layar setelah animasi expand
+    // Scroll section ke atas layar setelah animasi expand
     const sectionCard = body.closest('.section-card');
     setTimeout(()=>{
       if(!sectionCard) return;
-      const rect = sectionCard.getBoundingClientRect();
+      const rect    = sectionCard.getBoundingClientRect();
       const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-      const fixedBarH = document.getElementById('fixed-score-bar')
-        ? document.getElementById('fixed-score-bar').offsetHeight : 0;
-      const targetY = scrollY + rect.top - fixedBarH - 8;
-      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+      const barH    = (document.getElementById('fixed-score-bar')||{}).offsetHeight || 0;
+      window.scrollTo({ top: Math.max(0, scrollY + rect.top - barH - 8), behavior:'smooth' });
     }, 50);
   }
 }
@@ -4549,6 +4705,17 @@ function handleScoreChange(e){
   if(partner&&!partner.checked){ partner.checked=true; styleRadioLabels(partner.name); }
   styleRadioLabels(name);
 
+  // #21 Visual severity flash — border merah pada card saat nilai Kritis (3)
+  if(parseInt(val,10) >= 3) {
+    const card = input.closest('.ikl-card');
+    if(card) {
+      card.classList.remove('severity-flash');
+      // Force reflow agar animasi diulang jika dipilih berulang
+      void card.offsetWidth;
+      card.classList.add('severity-flash');
+    }
+  }
+
   calculateScore();
   if(!isInternalUpdate) saveFormData();
 }
@@ -4772,6 +4939,18 @@ async function buildReportHTML(){
   const iklScore=document.getElementById('final-ikl-score').textContent;
   const iklStatus=document.getElementById('ikl-status').textContent;
 
+  // Cek apakah mode trial — untuk watermark PDF
+  const isTrial = getTrialState() && !getLicenseState();
+  const isDevMode = sessionStorage.getItem('ikl_dev_mode') === '1';
+  const watermarkStyle = (isTrial || isDevMode) ? `
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-35deg);
+    font-size:72px; font-weight:900; color:rgba(180,0,0,0.08); z-index:0;
+    pointer-events:none; white-space:nowrap; font-family:sans-serif;
+    letter-spacing:8px; user-select:none;` : '';
+  const watermarkHTML = (isTrial || isDevMode)
+    ? `<div style="${watermarkStyle}">${isDevMode ? 'DEV MODE' : 'TRIAL'}</div>`
+    : '';
+
   let critRows='';
   CRITERIA.forEach(c=>{
     if(c.isHeader){
@@ -4816,7 +4995,7 @@ async function buildReportHTML(){
     .nb{border:none} .nb td{border:none;padding:3px 0}
     tr{page-break-inside:avoid}
     @media print{body{padding:0}@page{margin:1.5cm}}
-  </style></head><body>
+  </style></head><body>${watermarkHTML}
   <div class="hdr">
     <h1>Laporan Inspeksi Kesehatan Lingkungan (IKL)</h1>
     <h2>Satuan Pelayanan Pemenuhan Gizi (SPPG)</h2>
@@ -5631,6 +5810,18 @@ function setupQRFeature(){
 // Simpan snapshot inspeksi saat ini ke IDB
 async function saveInspectionHistory(){
   try{
+    // ── CEK BATAS TRIAL sebelum simpan ──────────────────────
+    const trial = getTrialState();
+    if(trial && !getLicenseState()) {
+      const existingHistory = await _idb.getAllHistory();
+      if(existingHistory.length >= TRIAL_MAX_INSP) {
+        showToast(
+          `Batas trial ${TRIAL_MAX_INSP} inspeksi tercapai. Aktifkan lisensi untuk melanjutkan.`,
+          'warning', 8000
+        );
+        return;
+      }
+    }
     const namaSPPG  = document.getElementById('nama_sppg').value.trim() || 'Tanpa Nama';
     const tanggal   = document.getElementById('tanggal_pemeriksaan').value || '';
     const iklEl     = document.getElementById('final-ikl-score');
@@ -5676,19 +5867,75 @@ async function saveInspectionHistory(){
       }
       // Refresh daftar
       renderHistoryList();
+      // Cek reminder backup (#19)
+      setTimeout(checkBackupReminder, 2000);
     }
   }catch(e){ console.warn('Save history error:', e); }
 }
 
 // Format tanggal untuk display
+// #20 Filter riwayat berdasarkan pencarian
+function filterHistoryList(query) {
+  const listEl  = document.getElementById('history-list');
+  if(!listEl) return;
+  const items   = listEl.querySelectorAll('.history-item');
+  const q       = (query || '').toLowerCase().trim();
+  let visible   = 0;
+  const total   = items.length;
+
+  items.forEach(item => {
+    const name    = item.dataset.name    || '';
+    const tanggal = item.dataset.tanggal || '';
+    const match   = !q || name.includes(q) || tanggal.includes(q);
+    item.style.display = match ? '' : 'none';
+    if(match) visible++;
+  });
+
+  updateHistoryCount(visible, total, q);
+}
+
+function updateHistoryCount(visible, total, query) {
+  const counter = document.getElementById('history-count');
+  if(!counter) return;
+  if(total === 0) { counter.textContent = ''; return; }
+  if(query) {
+    counter.textContent = `Menampilkan ${visible} dari ${total} inspeksi`;
+  } else {
+    counter.textContent = `${total} inspeksi tersimpan`;
+  }
+}
+
+// #22 Timestamp format lokal dengan nama timezone Indonesia
 function _fmtDate(ts){
   if(!ts) return '—';
   try{
-    return new Date(ts).toLocaleDateString('id-ID',{
-      day:'2-digit', month:'short', year:'numeric',
-      hour:'2-digit', minute:'2-digit'
-    });
-  }catch(e){ return String(ts); }
+    const d  = new Date(ts);
+    // Nama hari dan bulan Indonesia
+    const days   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+    const dayName = days[d.getDay()];
+    const date    = String(d.getDate()).padStart(2,'0');
+    const month   = months[d.getMonth()];
+    const year    = d.getFullYear();
+    const hour    = String(d.getHours()).padStart(2,'0');
+    const min     = String(d.getMinutes()).padStart(2,'0');
+
+    // Deteksi timezone Indonesia dari offset
+    const offsetMin = -d.getTimezoneOffset(); // offset dalam menit
+    let tzName = '';
+    if     (offsetMin === 420) tzName = 'WIB';
+    else if(offsetMin === 480) tzName = 'WITA';
+    else if(offsetMin === 540) tzName = 'WIT';
+    else {
+      // Fallback: tampilkan offset numerik (GMT+X)
+      const sign = offsetMin >= 0 ? '+' : '-';
+      const hrs  = Math.floor(Math.abs(offsetMin)/60);
+      tzName = `GMT${sign}${hrs}`;
+    }
+
+    return `${dayName}, ${date} ${month} ${year} • ${hour}:${min} ${tzName}`;
+  } catch(e){ return String(ts); }
 }
 
 // Render daftar riwayat
@@ -5717,6 +5964,9 @@ async function renderHistoryList(){
 
       const div = document.createElement('div');
       div.className = 'history-item';
+      // Simpan data untuk filter
+      div.dataset.name    = (item.namaSPPG || '').toLowerCase();
+      div.dataset.tanggal = tanggalStr.toLowerCase();
       var h = '';
       h += '<div class="history-item-head">';
       h += '<div class="history-item-name">' + _escHtml(item.namaSPPG) + '</div>';
@@ -5735,6 +5985,12 @@ async function renderHistoryList(){
 
       listEl.appendChild(div);
     });
+
+    // Update counter dan terapkan filter yang sedang aktif
+    const searchEl = document.getElementById('history-search');
+    const currentQuery = searchEl ? searchEl.value : '';
+    updateHistoryCount(items.length, items.length);
+    if(currentQuery) filterHistoryList(currentQuery);
 
     // Event delegation — gunakan onclick langsung agar tidak accumulate listeners
     listEl.onclick = async function(e){
@@ -5873,6 +6129,11 @@ function setupHistoryFeature(){
 
   btnOpen.addEventListener('click', ()=>{
     modal.classList.add('active');
+    // Reset pencarian setiap kali modal dibuka
+    const searchEl = document.getElementById('history-search');
+    if(searchEl) { searchEl.value = ''; }
+    const countEl = document.getElementById('history-count');
+    if(countEl) countEl.textContent = '';
     renderHistoryList();
   });
 
@@ -6471,8 +6732,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{ try {
   document.getElementById('pdf-cancel-btn').addEventListener('click',()=>document.getElementById('pdf-modal').classList.remove('active'));
   document.getElementById('pdf-confirm-btn').addEventListener('click',()=>{ document.getElementById('pdf-modal').classList.remove('active'); exportPDF(); });
 
-  // Reset
-  document.getElementById('reset-form-btn').addEventListener('click',resetForm);
+  // Reset — gunakan modal konfirmasi dengan countdown (#15)
+  document.getElementById('reset-form-btn').addEventListener('click', showResetModal);
 
   // #09 Autosave via Page Visibility API
   document.addEventListener('visibilitychange', () => {
@@ -6482,6 +6743,30 @@ document.addEventListener('DOMContentLoaded', async ()=>{ try {
   // Inisialisasi sistem lisensi
   initLicenseSystem();
 
+  // #10 Update Checker — jalankan di background saat online (silent)
+  if(navigator.onLine) setTimeout(checkForUpdates, 3000);
+  window.addEventListener('online', () => checkForUpdates());
+
+  // #13 Storage quota check
+  setTimeout(checkStorageQuota, 4000);
+
+  // #10 Handle PWA shortcuts dari manifest.json
+  const _action = new URLSearchParams(window.location.search).get('action');
+  if(_action === 'new') {
+    // Shortcut 'Inspeksi Baru': scroll ke atas dan fokus ke field pertama
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const firstInput = document.getElementById('nama_sppg');
+      if(firstInput) firstInput.focus();
+    }, 500);
+  } else if(_action === 'history') {
+    // Shortcut 'Riwayat': buka modal riwayat
+    setTimeout(() => {
+      const btnHistory = document.getElementById('btn-open-history');
+      if(btnHistory) btnHistory.click();
+    }, 600);
+  }
+
   } catch(e){ console.error('App init error:',e); }
 });
 
@@ -6490,6 +6775,100 @@ document.addEventListener('DOMContentLoaded', async ()=>{ try {
 // ═══════════════════════════════════════════════════════════════
 const APP_VERSION = '2026.1.0';
 document.querySelectorAll('.app-version-text').forEach(el => el.textContent = APP_VERSION);
+
+// ═══════════════════════════════════════════════════════════════
+// #10 UPDATE CHECKER via GitHub Gist (silent background check)
+// ═══════════════════════════════════════════════════════════════
+// Ganti URL ini dengan Gist Anda setelah membuat file version.json
+// Format Gist URL: https://gist.githubusercontent.com/{username}/{gist_id}/raw/{filename}
+const UPDATE_CHECK_URL = 'https://gist.githubusercontent.com/raw/ikl-sppg-version/version.json';
+const UPDATE_CHECK_KEY = 'ikl_last_update_check';
+const UPDATE_CHECK_INTERVAL_DAYS = 1;
+
+async function checkForUpdates() {
+  try {
+    // Skip jika URL masih placeholder (belum diisi developer)
+    if(UPDATE_CHECK_URL.includes('/raw/ikl-sppg-version/')) {
+      try{ console.warn('[UpdateCheck] URL Gist belum dikonfigurasi, skip.'); }catch(_){}
+      return;
+    }
+    // Throttle: jangan cek lebih dari sekali per hari
+    const lastCheck = safeStorage.getItem(UPDATE_CHECK_KEY);
+    if(lastCheck) {
+      const daysSince = (Date.now() - parseInt(lastCheck)) / (1000*60*60*24);
+      if(daysSince < UPDATE_CHECK_INTERVAL_DAYS) return;
+    }
+
+    const ctrl    = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), 5000); // timeout 5 detik
+    const res = await fetch(UPDATE_CHECK_URL + '?t=' + Date.now(), {
+      signal: ctrl.signal,
+      cache:  'no-store'
+    });
+    clearTimeout(timeout);
+
+    if(!res.ok) return;
+    const data = await res.json();
+
+    safeStorage.setItem(UPDATE_CHECK_KEY, Date.now().toString());
+
+    if(!data.version || !data.url) return;
+
+    // Bandingkan versi: format YYYY.M.patch → bandingkan sebagai array angka
+    const parse = v => String(v).split('.').map(Number);
+    const curr  = parse(APP_VERSION);
+    const latest = parse(data.version);
+
+    let isNewer = false;
+    for(let i = 0; i < 3; i++) {
+      if((latest[i]||0) > (curr[i]||0)) { isNewer = true; break; }
+      if((latest[i]||0) < (curr[i]||0)) break;
+    }
+
+    if(isNewer) {
+      // Tampilkan banner update — tidak mengganggu, bisa diklik atau diabaikan
+      showUpdateBanner(data.version, data.url, data.changelog || '');
+    }
+  } catch(e) {
+    // Silent fail — update checker tidak boleh ganggu app
+    // console.debug tidak tersedia di iOS Safari, gunakan console.warn
+    if(e.name !== 'AbortError') {
+      try { console.warn('[UpdateCheck] Gagal:', e.message); } catch(_){}
+    }
+  }
+}
+
+function showUpdateBanner(version, url, changelog) {
+  // Cegah banner duplikat
+  if(document.getElementById('update-banner')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'update-banner';
+  banner.style.cssText = `
+    position:fixed; top:0; left:0; right:0; z-index:9998;
+    background:var(--brand); color:#fff;
+    padding:10px 16px; font-size:13px; font-weight:600;
+    display:flex; align-items:center; gap:10px; justify-content:space-between;
+    box-shadow:0 2px 12px rgba(0,0,0,.2);
+    animation: toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  `;
+  banner.innerHTML = `
+    <span>🆕 Versi baru tersedia: <strong>v${version}</strong>${changelog ? ' — ' + changelog : ''}</span>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <a href="${url}" target="_blank" rel="noopener"
+         style="background:#fff;color:var(--brand);padding:5px 12px;border-radius:6px;
+                font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">
+        Unduh
+      </a>
+      <button onclick="this.closest('#update-banner').remove()"
+              style="background:rgba(255,255,255,.2);border:none;color:#fff;
+                     padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px">
+        Nanti
+      </button>
+    </div>
+  `;
+  document.body.prepend(banner);
+}
 
 // ═══════════════════════════════════════════════════════════════
 // #08 TOAST NOTIFICATION SYSTEM
@@ -6551,18 +6930,29 @@ const _SECRET = _s1 + _s2 + _s3 + _s4;
 
 // HMAC-SHA256 murni JavaScript (tanpa library)
 async function hmacSha256(message, secret) {
-  const enc = new TextEncoder();
-  const keyData = enc.encode(secret);
-  const msgData = enc.encode(message);
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-  );
-  const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
-  return Array.from(new Uint8Array(signature))
-    .map(b => b.toString(16).padStart(2, '0')).join('');
+  try {
+    const enc = new TextEncoder();
+    const keyData = enc.encode(secret);
+    const msgData = enc.encode(message);
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+    return Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch(e) {
+    console.error('[HMAC] Error:', e);
+    return '';
+  }
 }
 
-// Format key: PUSK25-AAAAA-BBBBB-CCCCC-DDDDDDD
+// Format tanggal Indonesia — HARUS didefinisikan sebelum verifyLicenseKey memakainya
+function formatDateID(date) {
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+// Format key: PUSK26-AAAAA-BBBBB-CCCCC-DDDDDDD
 // Encoded: [inst_hash(5)][exp_date(8)][pkg(1)][issue(8)] = 22 chars → split 5-5-5-7
 async function verifyLicenseKey(rawKey) {
   const key = rawKey.replace(/\s/g, '').toUpperCase();
@@ -6587,14 +6977,16 @@ async function verifyLicenseKey(rawKey) {
   const parts = key.split('-');
   if(parts.length !== 5) return { valid: false, reason: 'Format key tidak valid' };
 
-  const prefix  = parts[0];   // e.g. PUSK25
-  const encoded = parts[1] + parts[2] + parts[3]; // 15 chars data
-  const checksum = parts[4];  // 7 chars HMAC
+  const prefix   = parts[0];
+  const encoded  = parts[1] + parts[2] + parts[3];
+  const checksum = parts[4];
 
-  // Verifikasi HMAC
-  const fullHmac = await hmacSha256(prefix + encoded, _SECRET);
-  const expected = fullHmac.slice(0, 7).toUpperCase();
-  if(checksum !== expected) return { valid: false, reason: 'Key tidak valid atau sudah diubah' };
+  try {
+    // Verifikasi HMAC
+    const fullHmac = await hmacSha256(prefix + encoded, _SECRET);
+    if(!fullHmac) return { valid: false, reason: 'Verifikasi kriptografis gagal' };
+    const expected = fullHmac.slice(0, 7).toUpperCase();
+    if(checksum !== expected) return { valid: false, reason: 'Key tidak valid atau sudah diubah' };
 
   // Decode expired date (chars 5-12 = YYYYMMDD)
   const expStr = encoded.slice(5, 13);
@@ -6615,12 +7007,12 @@ async function verifyLicenseKey(rawKey) {
   const instCode = encoded.slice(0, 5);
 
   return { valid: true, expDate, diffDays, instCode, prefix, key };
+  } catch(e) {
+    console.error('[License] verifyLicenseKey error:', e);
+    return { valid: false, reason: 'Terjadi kesalahan verifikasi. Coba lagi.' };
+  }
 }
 
-function formatDateID(date) {
-  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-}
 
 function getLicenseState() {
   try {
@@ -6800,6 +7192,7 @@ function updateLicenseBadge() {
 function checkLicenseReminders() {
   const lic = getLicenseState();
   if(!lic) return;
+  if(lic.isBeta) return;   // beta tester tidak perlu reminder bayar
   const expDate = new Date(lic.expDate);
   const today   = new Date(); today.setHours(0,0,0,0);
   const diffDays = Math.ceil((expDate - today) / (1000*60*60*24));
@@ -6855,7 +7248,7 @@ function initLicenseSystem() {
       return;
     }
     showSplash();
-    showToast('Lisensi Anda telah expired. Silakan perpanjang.', 'warning', 0);
+    showToast('Lisensi Anda telah expired. Silakan perpanjang.', 'warning', 12000);
     return;
   }
 
@@ -6870,7 +7263,7 @@ function initLicenseSystem() {
       return;
     }
     showSplash();
-    showToast('Periode trial telah berakhir. Aktifkan lisensi untuk melanjutkan.', 'warning', 0);
+    showToast('Periode trial telah berakhir. Aktifkan lisensi untuk melanjutkan.', 'warning', 12000);
     return;
   }
 
@@ -6926,6 +7319,127 @@ async function exportBackup() {
   } catch(err) {
     showToast('Gagal membuat backup: ' + err.message, 'error', 6000);
   }
+}
+
+// #19 Backup reminder — cek setelah setiap simpan inspeksi
+// ═══════════════════════════════════════════════════════════════
+// #13 STORAGE QUOTA MONITOR & WARNING
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// #14 LOADING BAR CONTROLLER
+// ═══════════════════════════════════════════════════════════════
+(function initLoadBar(){
+  const bar = document.getElementById('app-load-bar');
+  if(!bar) return;
+  // Animasi progres palsu: 0→70% saat render, 70→100% saat DOMContentLoaded
+  bar.style.width = '30%';
+  setTimeout(() => { bar.style.width = '70%'; }, 80);
+  window.addEventListener('DOMContentLoaded', () => {
+    bar.style.width = '90%';
+  });
+  // Selesai setelah fade-in app-wrapper
+  setTimeout(() => {
+    bar.style.width = '100%';
+    setTimeout(() => { bar.classList.add('done'); }, 350);
+  }, 700);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// #15 KONFIRMASI RESET DENGAN COUNTDOWN
+// ═══════════════════════════════════════════════════════════════
+let _resetCountdownTimer = null;
+
+function showResetModal() {
+  const modal   = document.getElementById('reset-confirm-modal');
+  const btn     = document.getElementById('reset-proceed-btn');
+  const counter = document.getElementById('reset-countdown');
+  if(!modal || !btn || !counter) { executeReset(); return; }
+
+  let secs = 5;
+  counter.textContent = secs;
+  btn.disabled = true;
+  modal.classList.add('open');
+
+  _resetCountdownTimer = setInterval(() => {
+    secs--;
+    counter.textContent = secs;
+    if(secs <= 0) {
+      clearInterval(_resetCountdownTimer);
+      btn.disabled = false;
+      counter.textContent = '';
+      counter.closest('.reset-confirm-desc').lastChild.textContent = '';
+    }
+  }, 1000);
+}
+
+function closeResetModal() {
+  const modal = document.getElementById('reset-confirm-modal');
+  if(modal) modal.classList.remove('open');
+  clearInterval(_resetCountdownTimer);
+  // Reset tombol
+  const btn = document.getElementById('reset-proceed-btn');
+  if(btn) btn.disabled = true;
+  const counter = document.getElementById('reset-countdown');
+  if(counter) counter.textContent = '5';
+}
+
+function executeReset() {
+  closeResetModal();
+  resetForm();   // panggil fungsi reset yang sudah ada
+}
+
+async function checkStorageQuota() {
+  try {
+    if(!navigator.storage || !navigator.storage.estimate) return;
+    const { usage, quota } = await navigator.storage.estimate();
+    if(!quota || quota === 0) return;
+
+    const pct     = (usage / quota) * 100;
+    const usedMB  = (usage  / 1024 / 1024).toFixed(1);
+    const totalMB = (quota  / 1024 / 1024).toFixed(0);
+
+    if(pct >= 90) {
+      showToast(
+        `⚠️ Storage hampir penuh! ${usedMB}MB / ${totalMB}MB (${pct.toFixed(0)}%). Segera backup & hapus riwayat lama.`,
+        'error', 10000
+      );
+    } else if(pct >= 75) {
+      showToast(
+        `Storage terpakai ${pct.toFixed(0)}% (${usedMB}MB). Pertimbangkan backup data Anda.`,
+        'warning', 7000
+      );
+    }
+    // Simpan info storage untuk ditampilkan di panel about (jika ada)
+    safeStorage.setItem('ikl_storage_info', JSON.stringify({ usedMB, totalMB, pct: pct.toFixed(1) }));
+  } catch(e) {
+    try { console.warn('[Storage] Quota check gagal:', e.message); } catch(_){}
+  }
+}
+
+function checkBackupReminder() {
+  try {
+    const lastBackup = safeStorage.getItem('ikl_last_backup');
+    if(!lastBackup) {
+      // Belum pernah backup sama sekali — cek jumlah riwayat
+      _idb.getAllHistory().then(items => {
+        if(items.length >= 5) {
+          showToast(
+            `Anda memiliki ${items.length} inspeksi tersimpan. Belum pernah backup!`,
+            'warning', 7000
+          );
+        }
+      });
+      return;
+    }
+    const lastDate = new Date(lastBackup);
+    const diffDays = Math.floor((Date.now() - lastDate) / (1000*60*60*24));
+    if(diffDays >= 14) {
+      showToast(
+        `Backup terakhir ${diffDays} hari lalu. Segera backup data Anda.`,
+        'warning', 6000
+      );
+    }
+  } catch(e) { /* silent */ }
 }
 
 function importBackupTrigger() {
@@ -6997,12 +7511,23 @@ console.info(
 <!-- ══════════ PWA: SERVICE WORKER REGISTRATION ══════════ -->
 <script>
 (function registerSW(){
+  // Service Worker hanya berjalan di HTTPS atau localhost
+  // Jangan coba register di file:// atau about:srcdoc
   if(!('serviceWorker' in navigator)) return;
+  if(window.location.protocol !== 'https:' &&
+     window.location.hostname !== 'localhost' &&
+     window.location.hostname !== '127.0.0.1'){
+    try{ console.warn('[SW] Dilewati: butuh HTTPS. Buka dari https://ikl-sppg.pages.dev'); }catch(_){}
+    return;
+  }
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => {
+        try{ console.warn('[SW] Terdaftar, scope:', reg.scope); }catch(_){}
         reg.addEventListener('updatefound', () => {
           const newSW = reg.installing;
+          if(!newSW) return;
           newSW.addEventListener('statechange', () => {
             if(newSW.state === 'installed' && navigator.serviceWorker.controller){
               if(typeof showToast === 'function')
@@ -7011,7 +7536,10 @@ console.info(
           });
         });
       })
-      .catch(err => console.warn('[SW] Registrasi gagal:', err));
+      .catch(err => {
+        // Tangani tanpa menampilkan error overlay
+        try{ console.warn('[SW] Registrasi gagal (normal di non-HTTPS):', err.message||err); }catch(_){}
+      });
 
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
