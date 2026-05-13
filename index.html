@@ -239,6 +239,42 @@ body,
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ── #4 GOOGLE MAPS BUTTON ───────────────────────────────────── */
+#btn-open-maps {
+  display: none;              /* default hidden — JS set display:flex saat tampil */
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #fff;
+  color: #1a73e8;
+  border: 1.5px solid #1a73e8;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 10px 14px;
+  width: 100%;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s, transform 0.12s,
+              var(--td) color, var(--td) border-color;
+  box-shadow: 0 1px 4px rgba(26,115,232,.12);
+  box-sizing: border-box;
+}
+#btn-open-maps:hover {
+  background: #e8f0fe;
+  box-shadow: 0 2px 8px rgba(26,115,232,.22);
+}
+#btn-open-maps:active { transform: scale(.97); }
+#btn-open-maps svg    { width: 16px; height: 16px; flex-shrink: 0; }
+
+[data-theme="dark"] #btn-open-maps {
+  background: rgba(26,115,232,.1);
+  color: #7baaf7;
+  border-color: rgba(26,115,232,.35);
+}
+[data-theme="dark"] #btn-open-maps:hover {
+  background: rgba(26,115,232,.2);
+}
+
 /* ── #21 VISUAL SEVERITY FLASH ──────────────────────────────── */
 @keyframes severity-flash {
   0%   { box-shadow: 0 0 0 0   rgba(220,38,38,0); }
@@ -2853,8 +2889,17 @@ textarea.field-input { resize:vertical; min-height:90px; }
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </div>
         <div>
-          <div class="backup-action-title">Unduh Backup</div>
+          <div class="backup-action-title">Unduh Backup (JSON)</div>
           <div class="backup-action-desc">Ekspor semua riwayat inspeksi ke file .json</div>
+        </div>
+      </button>
+      <button class="backup-action-btn" onclick="exportToExcel()">
+        <div class="backup-action-icon" style="background:rgba(34,197,94,.12)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#16a34a"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+        </div>
+        <div>
+          <div class="backup-action-title">Ekspor Rekapitulasi (Excel)</div>
+          <div class="backup-action-desc">Tabel tanggal, nama SPPG, nilai IKL, dan hasil</div>
         </div>
       </button>
       <button class="backup-action-btn" onclick="importBackupTrigger()">
@@ -2959,10 +3004,21 @@ textarea.field-input { resize:vertical; min-height:90px; }
             <label class="field-label">Bujur (Longitude)</label>
             <input type="text" id="longitude" class="field-input" placeholder="106.8456" readonly>
           </div>
-          <div class="field-group span-2">
+          <!-- Tombol GPS: full-width baris sendiri -->
+          <div class="field-group" style="grid-column:1/-1">
             <button id="get-location-btn" class="btn btn-primary" style="width:100%">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
               Dapatkan Lokasi GPS
+            </button>
+          </div>
+          <!-- Tombol Maps: muncul setelah GPS berhasil, style khas Google Maps -->
+          <div class="field-group" style="grid-column:1/-1">
+            <button id="btn-open-maps" onclick="openGoogleMaps()" title="Buka lokasi ini di Google Maps">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                <circle cx="12" cy="9" r="2.5"/>
+              </svg>
+              Buka di Google Maps
             </button>
           </div>
         </div>
@@ -4862,53 +4918,92 @@ function loadUIState(){
 }
 
 function resetForm(){
-  if(!confirm('Reset semua data formulir? Tindakan ini tidak dapat dibatalkan.')) return;
+  // KRITIS: key-key yang TIDAK BOLEH dihapus saat reset form
+  // Menghapus ini memungkinkan trial diulang tanpa bayar
+  const PROTECTED_KEYS = new Set([
+    LICENSE_KEY,          // 'ikl_license_v1'
+    TRIAL_KEY,            // 'ikl_trial_v1'
+    INSPECT_COUNT_KEY,    // 'ikl_inspect_count_v1'
+    THEME_KEY,            // tema — restore terpisah
+    'ikl_last_backup',    // info backup terakhir
+    UPDATE_CHECK_KEY,     // waktu cek update terakhir
+  ]);
 
-  // 0. Simpan tema terakhir sebelum reset — akan di-restore setelah reload
+  // 0. Simpan tema terakhir — akan di-restore setelah reload
   const lastTheme = safeStorage.getItem(THEME_KEY);
 
-  // 1. Hapus dari safeStorage (memStore + IDB)
-  safeStorage.removeItem(STORAGE_KEY);
-  safeStorage.removeItem(UI_STATE_KEY);
-  safeStorage.removeItem(SCORE_BAR_KEY);
-  safeStorage.removeItem('ikl_sign_sign-pemeriksa');
-  safeStorage.removeItem('ikl_sign_sign-pengelola');
-  // KRITIS: hapus JUGA dari localStorage langsung —
-  // _initStorage saat reload akan re-populate IDB dari localStorage
-  // jika key masih ada di localStorage
+  // 1. Hapus HANYA key form (bukan lisensi/trial/tema)
+  const formKeys = [
+    STORAGE_KEY, UI_STATE_KEY, SCORE_BAR_KEY,
+    'ikl_sign_sign-pemeriksa', 'ikl_sign_sign-pengelola',
+  ];
+  formKeys.forEach(k => safeStorage.removeItem(k));
+
+  // 2. Hapus dari localStorage — KECUALI protected keys
   try{
     if(_ls){
-      const lsKeysToDelete = [];
-      for(let _i=0;_i<_ls.length;_i++){
+      const keysToDelete = [];
+      for(let _i=0; _i<_ls.length; _i++){
         const _k = _ls.key(_i);
-        if(_k && _k.indexOf('ikl_') === 0) lsKeysToDelete.push(_k);
+        if(_k && _k.indexOf('ikl_') === 0 && !PROTECTED_KEYS.has(_k)){
+          keysToDelete.push(_k);
+        }
       }
-      lsKeysToDelete.forEach(k=>{ try{ _ls.removeItem(k); }catch(e){} });
+      keysToDelete.forEach(k=>{ try{ _ls.removeItem(k); }catch(e){} });
     }
   }catch(e){}
 
   // 2. Hapus dari IndexedDB (primary storage) — semua key 'ikl_'
   // Harus diselesaikan sebelum reload
   function doReload(){
-    // Restore tema terakhir agar tidak kembali ke default
-    if(lastTheme) safeStorage.setItem(THEME_KEY, lastTheme);
+    // Restore tema dan protected keys ke localStorage sebelum reload
+    // Ini memastikan license/trial survive walaupun IDB ter-clear sebagian
+    if(lastTheme) {
+      try{ if(_ls) _ls.setItem(THEME_KEY, lastTheme); }catch(e){}
+      safeStorage.setItem(THEME_KEY, lastTheme);
+    }
+    // Backup protected keys ke localStorage (jaga-jaga jika IDB terhapus)
+    PROTECTED_KEYS.forEach(k => {
+      try {
+        const val = _memStore[k] || (safeStorage.getItem ? safeStorage.getItem(k) : null);
+        if(val != null && _ls) _ls.setItem(k, val);
+      } catch(e){}
+    });
     window.location.reload();
   }
+
   try{
     if(_idb.db){
-      // Hapus SEMUA dari store 'kv' sekaligus (termasuk signatures)
+      // Hapus dari store 'kv' SELEKTIF — hanya key yang tidak dilindungi
       const clearKV = new Promise((res)=>{
         try{
           const tx    = _idb.db.transaction('kv','readwrite');
           const store = tx.objectStore('kv');
-          // clear() hapus semua sekaligus — lebih reliable dari cursor scan
-          const req   = store.clear();
-          req.onsuccess = ()=>res();
-          req.onerror   = ()=>res();
+          // Gunakan cursor untuk hapus selektif (bukan clear() yang hapus semua)
+          const req   = store.openCursor();
+          const toDelete = [];
+          req.onsuccess = (e) => {
+            const cursor = e.target.result;
+            if(cursor){
+              if(!PROTECTED_KEYS.has(cursor.key)){
+                toDelete.push(cursor.key);
+              }
+              cursor.continue();
+            } else {
+              // Hapus semua key yang tidak protected
+              let pending = toDelete.length;
+              if(pending === 0){ res(); return; }
+              toDelete.forEach(k => {
+                const dr = store.delete(k);
+                dr.onsuccess = dr.onerror = () => { if(--pending === 0) res(); };
+              });
+            }
+          };
+          req.onerror = ()=>res();
         }catch(e){ res(); }
       });
 
-      // Hapus semua dari store 'photos' (foto bukti)
+      // Hapus semua dari store 'photos' (foto bukti inspeksi)
       const clearPhotos = new Promise((res)=>{
         try{
           const tx2    = _idb.db.transaction('photos','readwrite');
@@ -5090,9 +5185,12 @@ async function buildReportHTML(){
   } catch(photoErr){ console.warn('Photo lampiran error:', photoErr); }
 
   // Sisipkan lampiran sebelum </body></html>
-  const bodyClose = reportHtml.lastIndexOf('<\\/body>');
+  const bodyClose = reportHtml.lastIndexOf('</body>');
   if(bodyClose >= 0 && photoPages){
     reportHtml = reportHtml.slice(0, bodyClose) + photoPages + reportHtml.slice(bodyClose);
+  } else if(photoPages) {
+    // Fallback: append di akhir jika </body> tidak ditemukan
+    reportHtml += photoPages;
   }
   return reportHtml;
 }
@@ -5612,9 +5710,16 @@ function _compressFormDataForQR(){
 
 // ── URL builder untuk QR ──
 function _buildQRUrl(data){
+  // Kembalikan data as-is (format ringkas teks, bukan URL)
+  // URL panjang melebihi kapasitas QR v20 (669 bytes)
+  // Format: v1|tanggal|score|nama|entries
+  return data;
+}
+
+// Fungsi terpisah untuk membangun URL share (untuk tombol salin/buka)
+function _buildShareUrl(data){
   const base = window.location.href.split('?')[0];
   const encoded = btoa(unescape(encodeURIComponent(data)));
-  // Ganti karakter yang tidak URL-safe di base64
   const safe = encoded.replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
   return base + '?d=' + safe;
 }
@@ -5696,42 +5801,46 @@ function setupQRFeature(){
   if(!modal||!btnShow||!btnClose||!canvas) return;
 
   btnShow.addEventListener('click', ()=>{
-    // Generate data
-    const data    = _compressFormDataForQR();
-    const url     = _buildQRUrl(data);
-    const dataLen = new Blob([url]).size;
-    const entries = (data.split('|')[4]||'').split(',').filter(Boolean).length;
+    // Generate data ringkas untuk QR (format teks, bukan URL)
+    const data      = _compressFormDataForQR();
+    const qrText    = _buildQRUrl(data);            // teks ringkas untuk QR
+    const shareUrl  = _buildShareUrl(data);          // URL panjang untuk tombol salin
+    const dataLen   = new Blob([qrText]).size;
+    const entries   = (data.split('|')[4]||'').split(',').filter(Boolean).length;
 
-    // Pilih cell size: lebih kecil untuk data besar agar QR muat
+    // Pilih cell size: lebih kecil untuk data besar
     const estVersion = Math.ceil(dataLen / 20);
     const cellSize = estVersion > 15 ? 3 : estVersion > 10 ? 3 : 4;
 
-    const ok = _QR.encode(url, canvas, cellSize);
+    const ok = _QR.encode(qrText, canvas, cellSize);
 
     if(ok){
-      if(urlText) urlText.textContent = url;
+      // URL text untuk salin = URL panjang; QR = teks ringkas
+      if(urlText) urlText.textContent = shareUrl;
       infoEl.innerHTML =
-        '\u2139\uFE0F ' + dataLen + ' bytes | ' + entries + ' nilai terisi' +
-        '<br>Scan untuk membuka data di browser.';
+        '\u2139\uFE0F QR berisi data ringkas (' + dataLen + ' bytes) | ' + entries + ' nilai terisi' +
+        '<br>Scan dengan kamera untuk membaca skor. Gunakan tombol Salin untuk URL lengkap.';
     } else {
-      // Coba versi minimal — hanya data inspeksi tanpa nama/tanggal
-      const minData = 'v1|||' + data.split('|')[2] + '|' + (data.split('|')[4]||'');
-      const minUrl  = _buildQRUrl(minData);
-      const ok2 = _QR.encode(minUrl, canvas, 3);
+      // Fallback: QR hanya skor + nama singkat
+      const score    = document.getElementById('final-ikl-score').textContent||'0';
+      const status   = document.getElementById('ikl-status').textContent||'';
+      const nama     = (document.getElementById('nama_sppg').value||'').substring(0,15);
+      const tgl      = document.getElementById('tanggal_pemeriksaan').value||'';
+      const fallback = `IKL SPPG\n${nama}\nTgl: ${tgl}\nNilai: ${score}\n${status}`;
+      const ok2      = _QR.encode(fallback, canvas, 4);
       if(ok2){
-        if(urlText) urlText.textContent = minUrl;
+        if(urlText) urlText.textContent = shareUrl;
         infoEl.innerHTML =
-          '\u26A0\uFE0F QR Mode Minimal: hanya nilai inspeksi (tanpa nama/tanggal).' +
-          '<br>' + new Blob([minUrl]).size + ' bytes | ' + entries + ' nilai.';
+          '\u26A0\uFE0F QR Mode Ringkas: hanya info utama.' +
+          '<br>Gunakan tombol Salin untuk URL data lengkap.';
       } else {
-        if(urlText) urlText.textContent = '';
+        if(urlText) urlText.textContent = shareUrl;
         canvas.width=canvas.height=100;
         const ctx2=canvas.getContext('2d');
         if(ctx2){ ctx2.fillStyle='#f5f5f5'; ctx2.fillRect(0,0,100,100);
           ctx2.fillStyle='#999'; ctx2.font='11px sans-serif';
           ctx2.textAlign='center'; ctx2.fillText('Terlalu besar',50,50); }
-        infoEl.innerHTML = '\u26A0\uFE0F Data melebihi kapasitas QR v20 (669 bytes).' +
-          ' Selesaikan inspeksi lalu coba lagi.';
+        infoEl.innerHTML = '\u26A0\uFE0F Data melebihi kapasitas QR. Gunakan tombol Salin untuk URL.';
       }
     }
     modal.classList.add('active');
@@ -5875,6 +5984,44 @@ async function saveInspectionHistory(){
 
 // Format tanggal untuk display
 // #20 Filter riwayat berdasarkan pencarian
+// ── #4 GOOGLE MAPS INTEGRATION ──────────────────────────────
+function openGoogleMaps() {
+  const btn = document.getElementById('btn-open-maps');
+  const lat = btn && btn.dataset.lat
+    ? btn.dataset.lat
+    : (document.getElementById('latitude').value||'').replace(/[^\d.\-]/g,'');
+  const lng = btn && btn.dataset.lng
+    ? btn.dataset.lng
+    : (document.getElementById('longitude').value||'').replace(/[^\d.\-]/g,'');
+
+  if(!lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))){
+    showToast('Koordinat GPS belum tersedia. Dapatkan lokasi terlebih dahulu.', 'warning', 4000);
+    return;
+  }
+
+  const namaRaw = (document.getElementById('nama_sppg').value || 'Lokasi Inspeksi')
+    .substring(0, 40).trim();
+
+  // URL Google Maps universal — bekerja di Android, iOS, dan desktop
+  // Format: ?q=lat,lng(Label) → tampilkan pin dengan nama SPPG
+  const namaEncoded = encodeURIComponent(namaRaw);
+  const url = `https://www.google.com/maps?q=${lat},${lng}(${namaEncoded})`;
+  window.open(url, '_blank', 'noopener,noreferrer');
+  showToast(`Membuka Google Maps: ${lat}, ${lng}`, 'success', 3000);
+}
+
+// Pulihkan tombol Maps saat loadFormData jika koordinat sudah ada
+function restoreMapsButton() {
+  const lat = (document.getElementById('latitude').value||'').replace(/[^\d.\-]/g,'');
+  const lng = (document.getElementById('longitude').value||'').replace(/[^\d.\-]/g,'');
+  const mapsBtn = document.getElementById('btn-open-maps');
+  if(mapsBtn && lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))){
+    mapsBtn.style.display = 'flex';
+    mapsBtn.dataset.lat = lat;
+    mapsBtn.dataset.lng = lng;
+  }
+}
+
 function filterHistoryList(query) {
   const listEl  = document.getElementById('history-list');
   if(!listEl) return;
@@ -6569,10 +6716,20 @@ function setupGeolocation(){
   }
 
   function applyCoords(lat, lng){
+    // Bersihkan angka dari teks ' (perkiraan)' jika ada
+    const cleanLat = String(lat).replace(/[^\d.\-]/g,'');
+    const cleanLng = String(lng).replace(/[^\d.\-]/g,'');
     document.getElementById('latitude').value  = lat;
     document.getElementById('longitude').value = lng;
     saveFormData();
     setSuccess(lat, lng);
+    // Tampilkan tombol Google Maps dengan display:flex
+    const mapsBtn = document.getElementById('btn-open-maps');
+    if(mapsBtn && cleanLat && cleanLng) {
+      mapsBtn.style.display = 'flex';
+      mapsBtn.dataset.lat = cleanLat;
+      mapsBtn.dataset.lng = cleanLng;
+    }
   }
 
   // Coba IP-based fallback jika geolocation gagal/ditolak
@@ -6705,6 +6862,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{ try {
   isInternalUpdate=true;
   try { initializeFormState(); } catch(e){ console.error('initializeFormState error:',e); }
   try { loadFormData(); }        catch(e){ console.error('loadFormData error:',e); }
+  restoreMapsButton(); // pulihkan tombol Maps jika koordinat sudah tersimpan
   try { loadUIState(); }         catch(e){ console.error('loadUIState error:',e); }
   isInternalUpdate=false;
 
@@ -7413,6 +7571,110 @@ async function checkStorageQuota() {
     safeStorage.setItem('ikl_storage_info', JSON.stringify({ usedMB, totalMB, pct: pct.toFixed(1) }));
   } catch(e) {
     try { console.warn('[Storage] Quota check gagal:', e.message); } catch(_){}
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// #5 EKSPOR REKAPITULASI KE EXCEL (.csv dengan BOM UTF-8)
+// ═══════════════════════════════════════════════════════════════
+async function exportToExcel() {
+  try {
+    closeBackupModal();
+    showToast('Menyiapkan rekapitulasi...', 'info', 2000);
+
+    const history = await _idb.getAllHistory();
+    if(!history || history.length === 0){
+      showToast('Belum ada riwayat inspeksi yang tersimpan.', 'warning', 4000);
+      return;
+    }
+
+    // Urutkan dari terlama ke terbaru
+    const sorted = [...history].sort((a,b) => (a.timestamp||0) - (b.timestamp||0));
+
+    // Header kolom
+    const headers = [
+      'No',
+      'Tanggal Pemeriksaan',
+      'Nama SPPG / Dapur',
+      'Nama Pemeriksa',
+      'Nilai IKL',
+      'Ketidaksesuaian',
+      'Hasil Pemeriksaan',
+      'Tanggal Disimpan',
+    ];
+
+    // Baris data
+    const rows = sorted.map((item, idx) => {
+      const tgl = item.tanggal
+        ? new Date(item.tanggal).toLocaleDateString('id-ID', {day:'2-digit',month:'2-digit',year:'numeric'})
+        : '—';
+      const simpan = item.timestamp
+        ? new Date(item.timestamp).toLocaleDateString('id-ID', {day:'2-digit',month:'2-digit',year:'numeric'})
+        : '—';
+
+      const nilaiFmt = parseFloat(item.iklScore||0).toFixed(2);
+      const deviasi  = item.totalDeviation != null ? item.totalDeviation : '—';
+      const hasil    = item.isOk ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI SYARAT';
+
+      return [
+        idx + 1,
+        tgl,
+        item.namaSPPG || '—',
+        item.namaPemeriksa || '—',
+        nilaiFmt,
+        deviasi,
+        hasil,
+        simpan,
+      ];
+    });
+
+    // Baris ringkasan di bawah
+    const totalInsp  = sorted.length;
+    const memenuhi   = sorted.filter(i => i.isOk).length;
+    const tidakMem   = totalInsp - memenuhi;
+    const avgScore   = (sorted.reduce((s,i)=>s+parseFloat(i.iklScore||0),0)/totalInsp).toFixed(2);
+
+    // Bangun CSV dengan BOM UTF-8 agar Excel baca encoding Indonesia dengan benar
+    function escCsv(v) {
+      const s = String(v==null?'':v);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? '"' + s.replace(/"/g, '""') + '"'
+        : s;
+    }
+
+    const lines = [];
+    // Judul laporan
+    lines.push(`REKAPITULASI HASIL INSPEKSI KESEHATAN LINGKUNGAN (IKL) SPPG`);
+    lines.push(`Dicetak: ${new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}`);
+    lines.push(`Versi Aplikasi: IKL SPPG v${APP_VERSION}`);
+    lines.push('');
+    // Header tabel
+    lines.push(headers.map(escCsv).join(','));
+    // Data
+    rows.forEach(row => lines.push(row.map(escCsv).join(',')));
+    // Ringkasan
+    lines.push('');
+    lines.push(`RINGKASAN`);
+    lines.push(`Total Inspeksi,${totalInsp}`);
+    lines.push(`Memenuhi Syarat,${memenuhi}`);
+    lines.push(`Tidak Memenuhi Syarat,${tidakMem}`);
+    lines.push(`Rata-rata Nilai IKL,${avgScore}`);
+
+    const csv  = '\uFEFF' + lines.join('\r\n'); // BOM UTF-8
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    a.href     = url;
+    a.download = `rekapitulasi_ikl_sppg_${date}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(`Rekapitulasi ${totalInsp} inspeksi berhasil diekspor ke Excel.`, 'success', 5000);
+  } catch(err) {
+    showToast('Gagal ekspor Excel: ' + err.message, 'error', 6000);
   }
 }
 
