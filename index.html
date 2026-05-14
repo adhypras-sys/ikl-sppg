@@ -5952,16 +5952,26 @@ async function saveInspectionHistory(){
     const signG = getSignatureDataURL('sign-pengelola');
 
     const now = Date.now();
+
+    // Ambil nilai ketidaksesuaian dari UI (total bobot yang melanggar)
+    const totalDeviationEl = document.getElementById('total-score-value');
+    const maxScoreEl       = document.getElementById('max-score-label');
+    const totalDev = totalDeviationEl ? parseInt(totalDeviationEl.textContent) || 0 : 0;
+
     const snapshot = {
-      id:        now,
-      timestamp: now,
-      namaSPPG:  namaSPPG,
-      tanggal:   tanggal,
-      iklScore:  iklScore.toFixed(2),
-      iklStatus: iklStatus,
-      isOk:      iklScore >= 80,
-      formData:  fd,
-      signatures:{ pemeriksa: signP, pengelola: signG },
+      id:             now,
+      timestamp:      now,
+      namaSPPG:       namaSPPG,
+      namaPemeriksa:  fd.textInputs['nama_pemeriksa']  || '',
+      namaPengelola:  fd.textInputs['nama_pengelola']  || '',
+      alamat:         fd.textInputs['alamat']           || '',
+      tanggal:        tanggal,
+      iklScore:       iklScore.toFixed(2),
+      iklStatus:      iklStatus,
+      isOk:           iklScore >= 80,
+      totalDeviation: totalDev,
+      formData:       fd,
+      signatures:     { pemeriksa: signP, pengelola: signG },
     };
 
     const ok = await _idb.saveHistory(snapshot);
@@ -7589,92 +7599,157 @@ async function exportToExcel() {
     }
 
     // Urutkan dari terlama ke terbaru
-    const sorted = [...history].sort((a,b) => (a.timestamp||0) - (b.timestamp||0));
+    const sorted = [...history].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
 
-    // Header kolom
+    // ── Helper: ambil nilai dari formData (kompatibel dengan snapshot lama) ──
+    function fromFormData(item, fieldId, fallback = '—') {
+      // Cek field langsung di snapshot (format baru)
+      if(item[fieldId] != null && item[fieldId] !== '') return item[fieldId];
+      // Cek di formData.textInputs (semua snapshot)
+      if(item.formData && item.formData.textInputs && item.formData.textInputs[fieldId] != null)
+        return item.formData.textInputs[fieldId] || fallback;
+      return fallback;
+    }
+
+    // ── Helper: format tanggal ke dd-mm-yyyy ──
+    // Pakai dd-mm-yyyy (bukan slash) agar Excel tidak salah parsing ke mm/dd/yyyy
+    function fmtTgl(val) {
+      if(!val) return '—';
+      try {
+        const d = new Date(val);
+        if(isNaN(d.getTime())) return String(val);
+        const dd = String(d.getDate()).padStart(2, '0');
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const yy = d.getFullYear();
+        return `${dd}-${mm}-${yy}`;
+      } catch(e) { return String(val); }
+    }
+
+    // ── Helper: escape CSV (RFC 4180) ──
+    function esc(v) {
+      const s = String(v == null ? '' : v);
+      return (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r'))
+        ? '"' + s.replace(/"/g, '""') + '"'
+        : s;
+    }
+
+    // ── Header kolom ──
     const headers = [
       'No',
       'Tanggal Pemeriksaan',
       'Nama SPPG / Dapur',
+      'Alamat',
       'Nama Pemeriksa',
+      'Nama Pengelola',
       'Nilai IKL',
-      'Ketidaksesuaian',
+      'Ketidaksesuaian (bobot)',
       'Hasil Pemeriksaan',
       'Tanggal Disimpan',
     ];
 
-    // Baris data
+    // ── Baris data ──
     const rows = sorted.map((item, idx) => {
-      const tgl = item.tanggal
-        ? new Date(item.tanggal).toLocaleDateString('id-ID', {day:'2-digit',month:'2-digit',year:'numeric'})
-        : '—';
-      const simpan = item.timestamp
-        ? new Date(item.timestamp).toLocaleDateString('id-ID', {day:'2-digit',month:'2-digit',year:'numeric'})
-        : '—';
+      const tgl    = fmtTgl(item.tanggal);
+      const simpan = fmtTgl(item.timestamp);
+      const nilai  = parseFloat(item.iklScore || 0).toFixed(2);
 
-      const nilaiFmt = parseFloat(item.iklScore||0).toFixed(2);
-      const deviasi  = item.totalDeviation != null ? item.totalDeviation : '—';
-      const hasil    = item.isOk ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI SYARAT';
+      // Ketidaksesuaian: gunakan field baru atau hitung dari formData
+      let dev = '—';
+      if(item.totalDeviation != null) {
+        dev = item.totalDeviation;
+      }
+      // iklStatus sebagai hasil — gunakan field baru atau isOk fallback
+      const hasil = item.isOk ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI SYARAT';
 
       return [
         idx + 1,
         tgl,
-        item.namaSPPG || '—',
-        item.namaPemeriksa || '—',
-        nilaiFmt,
-        deviasi,
+        fromFormData(item, 'nama_sppg',      item.namaSPPG  || '—'),
+        fromFormData(item, 'alamat',                                  ),
+        fromFormData(item, 'nama_pemeriksa',  item.namaPemeriksa || '—'),
+        fromFormData(item, 'nama_pengelola',  item.namaPengelola || '—'),
+        nilai,
+        dev,
         hasil,
         simpan,
       ];
     });
 
-    // Baris ringkasan di bawah
-    const totalInsp  = sorted.length;
-    const memenuhi   = sorted.filter(i => i.isOk).length;
-    const tidakMem   = totalInsp - memenuhi;
-    const avgScore   = (sorted.reduce((s,i)=>s+parseFloat(i.iklScore||0),0)/totalInsp).toFixed(2);
+    // ── Statistik ringkasan ──
+    const total    = sorted.length;
+    const memenuhi = sorted.filter(i => i.isOk).length;
+    const tidakMem = total - memenuhi;
+    const scores   = sorted.map(i => parseFloat(i.iklScore || 0));
+    const avgScore = (scores.reduce((s, v) => s + v, 0) / total).toFixed(2);
+    const maxScore = Math.max(...scores).toFixed(2);
+    const minScore = Math.min(...scores).toFixed(2);
+    const pctMemenuhi = ((memenuhi / total) * 100).toFixed(1);
 
-    // Bangun CSV dengan BOM UTF-8 agar Excel baca encoding Indonesia dengan benar
-    function escCsv(v) {
-      const s = String(v==null?'':v);
-      return s.includes(',') || s.includes('"') || s.includes('\n')
-        ? '"' + s.replace(/"/g, '""') + '"'
-        : s;
+    // ── Bangun CSV ──
+    const tanggalCetak = fmtTgl(new Date().toISOString());
+    const lines = [];
+
+    // Blok judul
+    lines.push(esc(`REKAPITULASI HASIL INSPEKSI KESEHATAN LINGKUNGAN (IKL) SPPG`));
+    lines.push(esc(`Dicetak: ${tanggalCetak}`));
+    lines.push(esc(`Versi Aplikasi: IKL SPPG v${APP_VERSION}`));
+    lines.push('');
+
+    // Tabel data
+    lines.push(headers.map(esc).join(','));
+    rows.forEach(row => lines.push(row.map(esc).join(',')));
+
+    // Blok ringkasan
+    lines.push('');
+    lines.push(esc('RINGKASAN STATISTIK'));
+    lines.push([esc('Total Inspeksi'),              esc(total)         ].join(','));
+    lines.push([esc('Memenuhi Syarat (≥80)'),       esc(memenuhi)      ].join(','));
+    lines.push([esc('Tidak Memenuhi Syarat (<80)'), esc(tidakMem)      ].join(','));
+    lines.push([esc('Persentase Memenuhi'),         esc(pctMemenuhi+'%')].join(','));
+    lines.push([esc('Nilai IKL Rata-rata'),         esc(avgScore)      ].join(','));
+    lines.push([esc('Nilai IKL Tertinggi'),         esc(maxScore)      ].join(','));
+    lines.push([esc('Nilai IKL Terendah'),          esc(minScore)      ].join(','));
+
+    // Gabungkan dengan BOM UTF-8 dan CRLF (standar CSV Windows/Excel)
+    const csv = '\uFEFF' + lines.join('\r\n');
+
+    // ── Download ──
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const fname = `rekapitulasi_ikl_sppg_${date}.csv`;
+
+    try {
+      // Metode 1: createObjectURL (desktop dan Android Chrome)
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = fname;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 500);
+    } catch(dlErr) {
+      // Metode 2: data: URI fallback (untuk WebView yang tidak support createObjectURL)
+      const b64 = btoa(unescape(encodeURIComponent(csv)));
+      const a2  = document.createElement('a');
+      a2.href   = 'data:text/csv;charset=utf-8;base64,' + b64;
+      a2.download = fname;
+      a2.style.display = 'none';
+      document.body.appendChild(a2);
+      a2.click();
+      document.body.removeChild(a2);
     }
 
-    const lines = [];
-    // Judul laporan
-    lines.push(`REKAPITULASI HASIL INSPEKSI KESEHATAN LINGKUNGAN (IKL) SPPG`);
-    lines.push(`Dicetak: ${new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}`);
-    lines.push(`Versi Aplikasi: IKL SPPG v${APP_VERSION}`);
-    lines.push('');
-    // Header tabel
-    lines.push(headers.map(escCsv).join(','));
-    // Data
-    rows.forEach(row => lines.push(row.map(escCsv).join(',')));
-    // Ringkasan
-    lines.push('');
-    lines.push(`RINGKASAN`);
-    lines.push(`Total Inspeksi,${totalInsp}`);
-    lines.push(`Memenuhi Syarat,${memenuhi}`);
-    lines.push(`Tidak Memenuhi Syarat,${tidakMem}`);
-    lines.push(`Rata-rata Nilai IKL,${avgScore}`);
+    showToast(
+      `✅ Rekapitulasi ${total} inspeksi diekspor. ${memenuhi} memenuhi syarat (${pctMemenuhi}%).`,
+      'success', 6000
+    );
 
-    const csv  = '\uFEFF' + lines.join('\r\n'); // BOM UTF-8
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
-    a.href     = url;
-    a.download = `rekapitulasi_ikl_sppg_${date}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    showToast(`Rekapitulasi ${totalInsp} inspeksi berhasil diekspor ke Excel.`, 'success', 5000);
   } catch(err) {
-    showToast('Gagal ekspor Excel: ' + err.message, 'error', 6000);
+    showToast('Gagal ekspor Excel: ' + (err.message || err), 'error', 6000);
   }
 }
 
