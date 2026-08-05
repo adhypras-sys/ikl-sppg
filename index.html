@@ -2286,222 +2286,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
 /* ═══════════════════════════════════════════════════════
    #03 SPLASH SCREEN LISENSI
 ═══════════════════════════════════════════════════════ */
-#license-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  transition: opacity 0.4s ease;
-}
-#license-splash.splash-hiding {
-  opacity: 0;
-  pointer-events: none;
-}
-.splash-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 32px 28px;
-  width: 100%;
-  max-width: 420px;
-  text-align: center;
-  box-shadow: 0 8px 40px rgba(0,0,0,.12);
-}
-.splash-logo {
-  width: 64px;
-  height: 64px;
-  background: var(--brand);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 20px;
-}
-.splash-logo svg { width: 36px; height: 36px; color: #fff; }
-.splash-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 4px;
-}
-.splash-subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-bottom: 24px;
-}
-.splash-tabs {
-  display: flex;
-  gap: 4px;
-  background: var(--surface-alt);
-  border-radius: 10px;
-  padding: 4px;
-  margin-bottom: 20px;
-}
-.splash-tab {
-  flex: 1;
-  padding: 8px;
-  border: none;
-  background: transparent;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-.splash-tab.active {
-  background: var(--surface);
-  color: var(--brand);
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
-}
-.splash-panel { display: none; }
-.splash-panel.active { display: block; }
 
-.splash-input-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-align: left;
-  margin-bottom: 6px;
-  display: block;
-}
-.splash-input {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  font-size: 14px;
-  font-family: 'Courier New', monospace;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-align: center;
-  color: var(--text-primary);
-  background: var(--surface-alt);
-  box-sizing: border-box;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  transition: border-color 0.2s;
-}
-.splash-input:focus {
-  outline: none;
-  border-color: var(--brand);
-}
-.splash-input.input-error { border-color: var(--danger); }
-.splash-input.input-ok    { border-color: #16a34a; }
-
-.splash-hint {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 16px;
-  min-height: 16px;
-  text-align: left;
-}
-.splash-hint.hint-error { color: var(--danger); }
-.splash-hint.hint-ok    { color: #16a34a; font-weight: 600; }
-
-.splash-btn {
-  width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: 10px;
-  background: var(--brand);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: opacity 0.2s, transform 0.15s;
-  margin-bottom: 10px;
-}
-.splash-btn:active { transform: scale(0.97); }
-.splash-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.splash-btn-secondary {
-  width: 100%;
-  padding: 10px;
-  border: 1.5px solid var(--border);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-}
-.splash-btn-secondary:hover { border-color: var(--brand); color: var(--brand); }
-
-.splash-trial-badge {
-  display: inline-block;
-  background: var(--brand-light);
-  color: var(--brand);
-  border: 1px solid var(--brand);
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 11px;
-  font-weight: 700;
-  margin-bottom: 12px;
-  letter-spacing: 0.04em;
-}
-.splash-trial-info {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  margin-bottom: 16px;
-}
-.splash-divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 16px 0;
-}
-.splash-footer {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 14px;
-}
-.splash-footer a {
-  color: var(--brand);
-  text-decoration: none;
-}
-
-/* ═══════════════════════════════════════════════════════
-   #05 BADGE LISENSI DI HEADER
-═══════════════════════════════════════════════════════ */
-#license-badge {
-  display: none;         /* hidden by default, shown after license active */
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: var(--surface-alt);
-  color: var(--text-secondary);
-  cursor: default;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
-}
-#license-badge.badge-trial {
-  background: var(--brand-light);
-  border-color: var(--brand);
-  color: var(--brand);
-}
-#license-badge.badge-expiring {
-  background: rgba(245,158,11,.12);
-  border-color: #D97706;
-  color: #92400E;
-}
-[data-theme="dark"] #license-badge.badge-expiring {
-  color: #FCD34D;
-  border-color: #F59E0B;
-}
-#license-badge.badge-active {
-  display: flex;
-}
-#license-badge svg { width: 11px; height: 11px; flex-shrink: 0; }
 
 /* ═══════════════════════════════════════════════════════
    #06 MODAL EKSPOR / IMPOR
@@ -2831,52 +2616,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
 <!-- ══ #08 TOAST CONTAINER ══ -->
 <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
 
-<!-- ══ #03 LICENSE SPLASH ══ -->
-<div id="license-splash" role="dialog" aria-modal="true" aria-label="Aktivasi Lisensi" style="display:none">
-  <div class="splash-box">
-    <div class="splash-logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-    </div>
-    <div class="splash-title">IKL SPPG</div>
-    <div class="splash-subtitle">Inspeksi Kesehatan Lingkungan · v<span class="app-version-text">2026.1.0</span></div>
 
-    <div class="splash-tabs">
-      <button class="splash-tab active" id="tab-activate" onclick="splashSwitchTab('activate')">Aktivasi</button>
-      <button class="splash-tab"        id="tab-trial"    onclick="splashSwitchTab('trial')">Coba Gratis</button>
-    </div>
-
-    <!-- Panel: Input License Key -->
-    <div class="splash-panel active" id="panel-activate">
-      <label class="splash-input-label">Masukkan License Key</label>
-      <input type="text" id="license-key-input" class="splash-input"
-             placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
-             maxlength="29" autocomplete="off" spellcheck="false">
-      <div class="splash-hint" id="license-hint">Format: 5 kelompok 5 karakter dipisah tanda hubung</div>
-      <button class="splash-btn" id="btn-activate-license" onclick="activateLicense()">Verifikasi Lisensi</button>
-    </div>
-
-    <!-- Panel: Trial -->
-    <div class="splash-panel" id="panel-trial">
-      <span class="splash-trial-badge">TRIAL 7 HARI</span>
-      <div class="splash-trial-info">
-        Coba IKL SPPG secara gratis selama <strong>7 hari</strong>.<br>
-        Maksimal <strong>10 inspeksi</strong> tersimpan.<br>
-        Laporan PDF akan menampilkan <em>watermark TRIAL</em>.
-      </div>
-      <button class="splash-btn" id="btn-start-trial" onclick="startTrial()">Mulai Trial Gratis</button>
-      <hr class="splash-divider">
-      <div class="splash-trial-info" style="font-size:11px">
-        Untuk membeli lisensi penuh, kunjungi<br>
-        <strong>ikl-sppg.pages.dev</strong>
-      </div>
-    </div>
-
-    <div class="splash-footer">
-      Dengan menggunakan aplikasi ini Anda menyetujui
-      <a href="#" onclick="return false">Syarat & Ketentuan</a>
-    </div>
-  </div>
-</div>
 
 <!-- ══ #06 BACKUP MODAL ══ -->
 <div id="backup-modal" role="dialog" aria-modal="true" aria-label="Backup dan Pulihkan Data">
@@ -2927,12 +2667,8 @@ textarea.field-input { resize:vertical; min-height:90px; }
     </button>
     <h1>Inspeksi Kesehatan Lingkungan</h1>
     <h2>Satuan Pelayanan Pemenuhan Gizi (SPPG)</h2>
-    <!-- #05 Badge lisensi + #11 Versi -->
+    <!-- #11 Versi -->
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px">
-      <div id="license-badge" aria-label="Status lisensi">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-        <span id="license-badge-text">Aktif</span>
-      </div>
       <span style="font-size:10px;color:var(--text-muted);opacity:.6">v<span class="app-version-text">2026.1.0</span></span>
     </div>
     <div id="autosave-status" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -4918,12 +4654,8 @@ function loadUIState(){
 }
 
 function resetForm(){
-  // KRITIS: key-key yang TIDAK BOLEH dihapus saat reset form
-  // Menghapus ini memungkinkan trial diulang tanpa bayar
+  // Key-key yang TIDAK BOLEH dihapus saat reset form
   const PROTECTED_KEYS = new Set([
-    LICENSE_KEY,          // 'ikl_license_v1'
-    TRIAL_KEY,            // 'ikl_trial_v1'
-    INSPECT_COUNT_KEY,    // 'ikl_inspect_count_v1'
     THEME_KEY,            // tema — restore terpisah
     'ikl_last_backup',    // info backup terakhir
     UPDATE_CHECK_KEY,     // waktu cek update terakhir
@@ -5034,17 +4766,7 @@ async function buildReportHTML(){
   const iklScore=document.getElementById('final-ikl-score').textContent;
   const iklStatus=document.getElementById('ikl-status').textContent;
 
-  // Cek apakah mode trial — untuk watermark PDF
-  const isTrial = getTrialState() && !getLicenseState();
-  const isDevMode = sessionStorage.getItem('ikl_dev_mode') === '1';
-  const watermarkStyle = (isTrial || isDevMode) ? `
-    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-35deg);
-    font-size:72px; font-weight:900; color:rgba(180,0,0,0.08); z-index:0;
-    pointer-events:none; white-space:nowrap; font-family:sans-serif;
-    letter-spacing:8px; user-select:none;` : '';
-  const watermarkHTML = (isTrial || isDevMode)
-    ? `<div style="${watermarkStyle}">${isDevMode ? 'DEV MODE' : 'TRIAL'}</div>`
-    : '';
+  const watermarkHTML = '';
 
   let critRows='';
   CRITERIA.forEach(c=>{
@@ -5919,18 +5641,6 @@ function setupQRFeature(){
 // Simpan snapshot inspeksi saat ini ke IDB
 async function saveInspectionHistory(){
   try{
-    // ── CEK BATAS TRIAL sebelum simpan ──────────────────────
-    const trial = getTrialState();
-    if(trial && !getLicenseState()) {
-      const existingHistory = await _idb.getAllHistory();
-      if(existingHistory.length >= TRIAL_MAX_INSP) {
-        showToast(
-          `Batas trial ${TRIAL_MAX_INSP} inspeksi tercapai. Aktifkan lisensi untuk melanjutkan.`,
-          'warning', 8000
-        );
-        return;
-      }
-    }
     const namaSPPG  = document.getElementById('nama_sppg').value.trim() || 'Tanpa Nama';
     const tanggal   = document.getElementById('tanggal_pemeriksaan').value || '';
     const iklEl     = document.getElementById('final-ikl-score');
@@ -5952,26 +5662,16 @@ async function saveInspectionHistory(){
     const signG = getSignatureDataURL('sign-pengelola');
 
     const now = Date.now();
-
-    // Ambil nilai ketidaksesuaian dari UI (total bobot yang melanggar)
-    const totalDeviationEl = document.getElementById('total-score-value');
-    const maxScoreEl       = document.getElementById('max-score-label');
-    const totalDev = totalDeviationEl ? parseInt(totalDeviationEl.textContent) || 0 : 0;
-
     const snapshot = {
-      id:             now,
-      timestamp:      now,
-      namaSPPG:       namaSPPG,
-      namaPemeriksa:  fd.textInputs['nama_pemeriksa']  || '',
-      namaPengelola:  fd.textInputs['nama_pengelola']  || '',
-      alamat:         fd.textInputs['alamat']           || '',
-      tanggal:        tanggal,
-      iklScore:       iklScore.toFixed(2),
-      iklStatus:      iklStatus,
-      isOk:           iklScore >= 80,
-      totalDeviation: totalDev,
-      formData:       fd,
-      signatures:     { pemeriksa: signP, pengelola: signG },
+      id:        now,
+      timestamp: now,
+      namaSPPG:  namaSPPG,
+      tanggal:   tanggal,
+      iklScore:  iklScore.toFixed(2),
+      iklStatus: iklStatus,
+      isOk:      iklScore >= 80,
+      formData:  fd,
+      signatures:{ pemeriksa: signP, pengelola: signG },
     };
 
     const ok = await _idb.saveHistory(snapshot);
@@ -6908,9 +6608,6 @@ document.addEventListener('DOMContentLoaded', async ()=>{ try {
     if(document.hidden) saveFormData();
   });
 
-  // Inisialisasi sistem lisensi
-  initLicenseSystem();
-
   // #10 Update Checker — jalankan di background saat online (silent)
   if(navigator.onLine) setTimeout(checkForUpdates, 3000);
   window.addEventListener('online', () => checkForUpdates());
@@ -7070,373 +6767,10 @@ function dismissToast(toast) {
   toast.addEventListener('animationend', () => toast.remove(), { once: true });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// #03 + #04 + #05 SISTEM LISENSI OFFLINE (HMAC-SHA256)
-// ═══════════════════════════════════════════════════════════════
-const LICENSE_KEY       = 'ikl_license_v1';
-const TRIAL_KEY         = 'ikl_trial_v1';
-const INSPECT_COUNT_KEY = 'ikl_inspect_count_v1';
-const TRIAL_MAX_DAYS    = 7;
-const TRIAL_MAX_INSP    = 10;
-
-// ── DEV MODE & BETA CONFIG ────────────────────────────────────
-// Secret URL param untuk developer: ?dev=IKL2026DEV
-// Beta key universal untuk tester: BETA0-BETA0-BETA0-BETA0-BETAOK
-const _DEV_PARAM    = 'IKL2026DEV';
-const _BETA_KEY     = 'BETA0-BETA0-BETA0-BETA0-BETAOK';
-const _BETA_EXPIRED = new Date('2026-12-31');   // ubah setiap tahun
-
-// Cek URL params sekali saat load
-const _urlParams = new URLSearchParams(window.location.search);
-const _isDevMode = _urlParams.get('dev') === _DEV_PARAM
-                   || sessionStorage.getItem('ikl_dev_mode') === '1';
-
-// Secret direkonstruksi runtime — obfuscation layer dasar
-const _s1 = 'IKL', _s2 = 'SPPG', _s3 = '2026';
-const _s4 = [75,33,97,121,49,52].map(c=>String.fromCharCode(c)).join('');
-const _SECRET = _s1 + _s2 + _s3 + _s4;
-
-// HMAC-SHA256 murni JavaScript (tanpa library)
-async function hmacSha256(message, secret) {
-  try {
-    const enc = new TextEncoder();
-    const keyData = enc.encode(secret);
-    const msgData = enc.encode(message);
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-    );
-    const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
-    return Array.from(new Uint8Array(signature))
-      .map(b => b.toString(16).padStart(2, '0')).join('');
-  } catch(e) {
-    console.error('[HMAC] Error:', e);
-    return '';
-  }
-}
-
-// Format tanggal Indonesia — HARUS didefinisikan sebelum verifyLicenseKey memakainya
+// Format tanggal Indonesia
 function formatDateID(date) {
   const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-// Format key: PUSK26-AAAAA-BBBBB-CCCCC-DDDDDDD
-// Encoded: [inst_hash(5)][exp_date(8)][pkg(1)][issue(8)] = 22 chars → split 5-5-5-7
-async function verifyLicenseKey(rawKey) {
-  const key = rawKey.replace(/\s/g, '').toUpperCase();
-
-  // ── BETA KEY: universal untuk semua beta tester ───────────
-  if(key === _BETA_KEY) {
-    const today = new Date(); today.setHours(0,0,0,0);
-    if(_BETA_EXPIRED < today) {
-      return { valid: false, reason: 'Beta key sudah expired. Hubungi developer untuk key baru.' };
-    }
-    return {
-      valid: true,
-      expDate: _BETA_EXPIRED,
-      diffDays: Math.ceil((_BETA_EXPIRED - today) / (1000*60*60*24)),
-      instCode: 'BETA0',
-      prefix: 'BETA0',
-      key,
-      isBeta: true,
-    };
-  }
-
-  const parts = key.split('-');
-  if(parts.length !== 5) return { valid: false, reason: 'Format key tidak valid' };
-
-  const prefix   = parts[0];
-  const encoded  = parts[1] + parts[2] + parts[3];
-  const checksum = parts[4];
-
-  try {
-    // Verifikasi HMAC
-    const fullHmac = await hmacSha256(prefix + encoded, _SECRET);
-    if(!fullHmac) return { valid: false, reason: 'Verifikasi kriptografis gagal' };
-    const expected = fullHmac.slice(0, 7).toUpperCase();
-    if(checksum !== expected) return { valid: false, reason: 'Key tidak valid atau sudah diubah' };
-
-  // Decode expired date (chars 5-12 = YYYYMMDD)
-  const expStr = encoded.slice(5, 13);
-  const expDate = new Date(
-    parseInt(expStr.slice(0,4)),
-    parseInt(expStr.slice(4,6)) - 1,
-    parseInt(expStr.slice(6,8))
-  );
-  const today = new Date();
-  today.setHours(0,0,0,0);
-
-  if(isNaN(expDate.getTime())) return { valid: false, reason: 'Format tanggal dalam key tidak valid' };
-  if(expDate < today) return { valid: false, reason: `Lisensi expired sejak ${formatDateID(expDate)}` };
-
-  // Hitung sisa hari
-  const diffMs   = expDate - today;
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-  const instCode = encoded.slice(0, 5);
-
-  return { valid: true, expDate, diffDays, instCode, prefix, key };
-  } catch(e) {
-    console.error('[License] verifyLicenseKey error:', e);
-    return { valid: false, reason: 'Terjadi kesalahan verifikasi. Coba lagi.' };
-  }
-}
-
-
-function getLicenseState() {
-  try {
-    const raw = safeStorage.getItem(LICENSE_KEY);
-    if(raw) return JSON.parse(raw);
-  } catch(e) {}
-  return null;
-}
-
-function getTrialState() {
-  try {
-    const raw = safeStorage.getItem(TRIAL_KEY);
-    if(raw) return JSON.parse(raw);
-  } catch(e) {}
-  return null;
-}
-
-async function activateLicense() {
-  const input  = document.getElementById('license-key-input');
-  const hint   = document.getElementById('license-hint');
-  const btn    = document.getElementById('btn-activate-license');
-  const rawKey = input.value.trim();
-
-  if(!rawKey) {
-    hint.textContent = 'Masukkan license key terlebih dahulu';
-    hint.className = 'splash-hint hint-error';
-    return;
-  }
-
-  btn.disabled = true;
-  btn.textContent = 'Memverifikasi...';
-  hint.textContent = '';
-  hint.className = 'splash-hint';
-
-  const result = await verifyLicenseKey(rawKey);
-
-  if(!result.valid) {
-    input.classList.add('input-error');
-    hint.textContent = result.reason;
-    hint.className = 'splash-hint hint-error';
-    btn.disabled = false;
-    btn.textContent = 'Verifikasi Lisensi';
-    return;
-  }
-
-  // Simpan state lisensi
-  const licenseState = {
-    key: result.key,
-    expDate: result.expDate.toISOString(),
-    instCode: result.instCode,
-    activatedAt: new Date().toISOString(),
-    isBeta: result.isBeta || false,
-  };
-  safeStorage.setItem(LICENSE_KEY, JSON.stringify(licenseState));
-
-  input.classList.remove('input-error');
-  input.classList.add('input-ok');
-  hint.textContent = `✓ Lisensi valid hingga ${formatDateID(result.expDate)}`;
-  hint.className = 'splash-hint hint-ok';
-
-  setTimeout(() => {
-    hideSplash();
-    updateLicenseBadge();
-    showToast(`Lisensi aktif hingga ${formatDateID(result.expDate)} ✓`, 'success', 5000);
-  }, 800);
-}
-
-function startTrial() {
-  const existing = getTrialState();
-  if(existing) { hideSplash(); updateLicenseBadge(); return; }
-
-  const trialState = {
-    startDate: new Date().toISOString(),
-    inspCount: 0,
-  };
-  safeStorage.setItem(TRIAL_KEY, JSON.stringify(trialState));
-  safeStorage.setItem(INSPECT_COUNT_KEY, '0');
-  hideSplash();
-  updateLicenseBadge();
-  showToast('Trial 7 hari dimulai. Nikmati IKL SPPG!', 'info', 4000);
-}
-
-function hideSplash() {
-  const splash = document.getElementById('license-splash');
-  if(!splash) return;
-  splash.classList.add('splash-hiding');
-  setTimeout(() => { splash.style.display = 'none'; }, 400);
-}
-
-function showSplash() {
-  const splash = document.getElementById('license-splash');
-  if(!splash) return;
-  splash.style.display = 'flex';
-  splash.classList.remove('splash-hiding');
-}
-
-function splashSwitchTab(tab) {
-  document.querySelectorAll('.splash-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.splash-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById(`tab-${tab}`).classList.add('active');
-  document.getElementById(`panel-${tab}`).classList.add('active');
-}
-
-// Auto-format key input: tambah tanda hubung otomatis
-function setupKeyInput() {
-  const input = document.getElementById('license-key-input');
-  if(!input) return;
-  input.addEventListener('input', function() {
-    let val = this.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    let formatted = '';
-    for(let i = 0; i < val.length && i < 25; i++) {
-      if(i > 0 && i % 5 === 0) formatted += '-';
-      formatted += val[i];
-    }
-    this.value = formatted;
-    this.classList.remove('input-error', 'input-ok');
-    document.getElementById('license-hint').textContent = '';
-    document.getElementById('license-hint').className = 'splash-hint';
-  });
-  input.addEventListener('keydown', function(e) {
-    if(e.key === 'Enter') activateLicense();
-  });
-}
-
-// Dev mode badge — merah mencolok agar tidak lupa sedang di dev mode
-function applyDevModeBadge() {
-  const badge    = document.getElementById('license-badge');
-  const badgeTxt = document.getElementById('license-badge-text');
-  if(!badge || !badgeTxt) return;
-  badgeTxt.textContent = '⚙ DEV MODE';
-  badge.className = 'badge-active';
-  badge.style.cssText = 'display:flex;background:rgba(239,68,68,.15);border-color:#ef4444;color:#b91c1c';
-}
-
-// #05 Update badge lisensi di header
-function updateLicenseBadge() {
-  const badge    = document.getElementById('license-badge');
-  const badgeTxt = document.getElementById('license-badge-text');
-  if(!badge || !badgeTxt) return;
-
-  const lic   = getLicenseState();
-  const trial = getTrialState();
-
-  if(lic) {
-    const expDate = new Date(lic.expDate);
-    const today   = new Date(); today.setHours(0,0,0,0);
-    const diffMs  = expDate - today;
-    const diffDays = Math.ceil(diffMs / (1000*60*60*24));
-
-    // Cek apakah ini beta key
-    if(lic.isBeta) {
-      badgeTxt.textContent = `🧪 Beta s/d ${formatDateID(expDate)}`;
-      badge.className = 'badge-active badge-trial';
-      return;
-    }
-
-    if(diffDays <= 0) {
-      badgeTxt.textContent = 'Lisensi Expired';
-      badge.className = 'badge-active badge-expiring';
-    } else if(diffDays <= 14) {
-      badgeTxt.textContent = `Exp ${diffDays}h lagi`;
-      badge.className = 'badge-active badge-expiring';
-    } else {
-      badgeTxt.textContent = `Aktif s/d ${formatDateID(expDate)}`;
-      badge.className = 'badge-active';
-    }
-  } else if(trial) {
-    const startDate = new Date(trial.startDate);
-    const today     = new Date(); today.setHours(0,0,0,0);
-    const diffDays  = TRIAL_MAX_DAYS - Math.floor((today - startDate)/(1000*60*60*24));
-    badgeTxt.textContent = diffDays > 0 ? `Trial ${diffDays}h` : 'Trial Expired';
-    badge.className = 'badge-active badge-trial';
-  }
-}
-
-// Cek reminder expired
-function checkLicenseReminders() {
-  const lic = getLicenseState();
-  if(!lic) return;
-  if(lic.isBeta) return;   // beta tester tidak perlu reminder bayar
-  const expDate = new Date(lic.expDate);
-  const today   = new Date(); today.setHours(0,0,0,0);
-  const diffDays = Math.ceil((expDate - today) / (1000*60*60*24));
-
-  if(diffDays <= 0) {
-    showToast('⚠️ Lisensi Anda sudah expired. Segera perpanjang untuk melanjutkan.', 'warning', 10000);
-  } else if(diffDays === 1) {
-    showToast('⚠️ Lisensi berakhir BESOK. Segera perpanjang!', 'warning', 8000);
-  } else if(diffDays === 7) {
-    showToast(`Lisensi berakhir dalam 7 hari (${formatDateID(expDate)}). Segera perpanjang.`, 'info', 6000);
-  } else if(diffDays === 30) {
-    showToast(`Lisensi berakhir dalam 30 hari (${formatDateID(expDate)}).`, 'info', 5000);
-  }
-}
-
-// Inisialisasi sistem lisensi
-function initLicenseSystem() {
-  setupKeyInput();
-
-  // ── LAPISAN 0: RESET param (?reset_license=1) ─────────────
-  // Untuk testing berulang — hapus lisensi tanpa hapus data inspeksi
-  if(_urlParams.get('reset_license') === '1') {
-    safeStorage.removeItem(LICENSE_KEY);
-    safeStorage.removeItem(TRIAL_KEY);
-    safeStorage.removeItem(INSPECT_COUNT_KEY);
-    // Bersihkan URL tanpa reload
-    const cleanUrl = window.location.pathname;
-    window.history.replaceState({}, '', cleanUrl);
-    showToast('Data lisensi dihapus. Silakan aktivasi ulang.', 'info', 4000);
-    showSplash();
-    return;
-  }
-
-  // ── LAPISAN 1: DEV MODE (?dev=IKL2026DEV) ─────────────────
-  if(_isDevMode) {
-    sessionStorage.setItem('ikl_dev_mode', '1');
-    // Bersihkan URL agar param tidak terlihat di history
-    if(_urlParams.has('dev')) {
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-    applyDevModeBadge();
-    return; // Langsung masuk, tidak perlu lisensi
-  }
-
-  // ── LAPISAN 2: LISENSI AKTIF ──────────────────────────────
-  const lic = getLicenseState();
-  if(lic) {
-    const expDate = new Date(lic.expDate);
-    const today   = new Date(); today.setHours(0,0,0,0);
-    if(expDate >= today) {
-      updateLicenseBadge();
-      setTimeout(checkLicenseReminders, 2000);
-      return;
-    }
-    showSplash();
-    showToast('Lisensi Anda telah expired. Silakan perpanjang.', 'warning', 12000);
-    return;
-  }
-
-  // ── LAPISAN 3: TRIAL AKTIF ────────────────────────────────
-  const trial = getTrialState();
-  if(trial) {
-    const startDate = new Date(trial.startDate);
-    const today     = new Date(); today.setHours(0,0,0,0);
-    const dayUsed   = Math.floor((today - startDate) / (1000*60*60*24));
-    if(dayUsed < TRIAL_MAX_DAYS) {
-      updateLicenseBadge();
-      return;
-    }
-    showSplash();
-    showToast('Periode trial telah berakhir. Aktifkan lisensi untuk melanjutkan.', 'warning', 12000);
-    return;
-  }
-
-  // ── TIDAK ADA: tampilkan splash ───────────────────────────
-  showSplash();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -7455,8 +6789,6 @@ async function exportBackup() {
     showToast('Menyiapkan backup...', 'info', 2000);
 
     const history = await _idb.getAllHistory();
-    const licState = getLicenseState();
-    const trialState = getTrialState();
 
     const backup = {
       _meta: {
@@ -7466,8 +6798,6 @@ async function exportBackup() {
         totalInspeksi: history.length,
       },
       history: history,
-      license: licState,
-      trial: trialState,
     };
 
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -7599,157 +6929,92 @@ async function exportToExcel() {
     }
 
     // Urutkan dari terlama ke terbaru
-    const sorted = [...history].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    const sorted = [...history].sort((a,b) => (a.timestamp||0) - (b.timestamp||0));
 
-    // ── Helper: ambil nilai dari formData (kompatibel dengan snapshot lama) ──
-    function fromFormData(item, fieldId, fallback = '—') {
-      // Cek field langsung di snapshot (format baru)
-      if(item[fieldId] != null && item[fieldId] !== '') return item[fieldId];
-      // Cek di formData.textInputs (semua snapshot)
-      if(item.formData && item.formData.textInputs && item.formData.textInputs[fieldId] != null)
-        return item.formData.textInputs[fieldId] || fallback;
-      return fallback;
-    }
-
-    // ── Helper: format tanggal ke dd-mm-yyyy ──
-    // Pakai dd-mm-yyyy (bukan slash) agar Excel tidak salah parsing ke mm/dd/yyyy
-    function fmtTgl(val) {
-      if(!val) return '—';
-      try {
-        const d = new Date(val);
-        if(isNaN(d.getTime())) return String(val);
-        const dd = String(d.getDate()).padStart(2, '0');
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const yy = d.getFullYear();
-        return `${dd}-${mm}-${yy}`;
-      } catch(e) { return String(val); }
-    }
-
-    // ── Helper: escape CSV (RFC 4180) ──
-    function esc(v) {
-      const s = String(v == null ? '' : v);
-      return (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r'))
-        ? '"' + s.replace(/"/g, '""') + '"'
-        : s;
-    }
-
-    // ── Header kolom ──
+    // Header kolom
     const headers = [
       'No',
       'Tanggal Pemeriksaan',
       'Nama SPPG / Dapur',
-      'Alamat',
       'Nama Pemeriksa',
-      'Nama Pengelola',
       'Nilai IKL',
-      'Ketidaksesuaian (bobot)',
+      'Ketidaksesuaian',
       'Hasil Pemeriksaan',
       'Tanggal Disimpan',
     ];
 
-    // ── Baris data ──
+    // Baris data
     const rows = sorted.map((item, idx) => {
-      const tgl    = fmtTgl(item.tanggal);
-      const simpan = fmtTgl(item.timestamp);
-      const nilai  = parseFloat(item.iklScore || 0).toFixed(2);
+      const tgl = item.tanggal
+        ? new Date(item.tanggal).toLocaleDateString('id-ID', {day:'2-digit',month:'2-digit',year:'numeric'})
+        : '—';
+      const simpan = item.timestamp
+        ? new Date(item.timestamp).toLocaleDateString('id-ID', {day:'2-digit',month:'2-digit',year:'numeric'})
+        : '—';
 
-      // Ketidaksesuaian: gunakan field baru atau hitung dari formData
-      let dev = '—';
-      if(item.totalDeviation != null) {
-        dev = item.totalDeviation;
-      }
-      // iklStatus sebagai hasil — gunakan field baru atau isOk fallback
-      const hasil = item.isOk ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI SYARAT';
+      const nilaiFmt = parseFloat(item.iklScore||0).toFixed(2);
+      const deviasi  = item.totalDeviation != null ? item.totalDeviation : '—';
+      const hasil    = item.isOk ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI SYARAT';
 
       return [
         idx + 1,
         tgl,
-        fromFormData(item, 'nama_sppg',      item.namaSPPG  || '—'),
-        fromFormData(item, 'alamat',                                  ),
-        fromFormData(item, 'nama_pemeriksa',  item.namaPemeriksa || '—'),
-        fromFormData(item, 'nama_pengelola',  item.namaPengelola || '—'),
-        nilai,
-        dev,
+        item.namaSPPG || '—',
+        item.namaPemeriksa || '—',
+        nilaiFmt,
+        deviasi,
         hasil,
         simpan,
       ];
     });
 
-    // ── Statistik ringkasan ──
-    const total    = sorted.length;
-    const memenuhi = sorted.filter(i => i.isOk).length;
-    const tidakMem = total - memenuhi;
-    const scores   = sorted.map(i => parseFloat(i.iklScore || 0));
-    const avgScore = (scores.reduce((s, v) => s + v, 0) / total).toFixed(2);
-    const maxScore = Math.max(...scores).toFixed(2);
-    const minScore = Math.min(...scores).toFixed(2);
-    const pctMemenuhi = ((memenuhi / total) * 100).toFixed(1);
+    // Baris ringkasan di bawah
+    const totalInsp  = sorted.length;
+    const memenuhi   = sorted.filter(i => i.isOk).length;
+    const tidakMem   = totalInsp - memenuhi;
+    const avgScore   = (sorted.reduce((s,i)=>s+parseFloat(i.iklScore||0),0)/totalInsp).toFixed(2);
 
-    // ── Bangun CSV ──
-    const tanggalCetak = fmtTgl(new Date().toISOString());
-    const lines = [];
-
-    // Blok judul
-    lines.push(esc(`REKAPITULASI HASIL INSPEKSI KESEHATAN LINGKUNGAN (IKL) SPPG`));
-    lines.push(esc(`Dicetak: ${tanggalCetak}`));
-    lines.push(esc(`Versi Aplikasi: IKL SPPG v${APP_VERSION}`));
-    lines.push('');
-
-    // Tabel data
-    lines.push(headers.map(esc).join(','));
-    rows.forEach(row => lines.push(row.map(esc).join(',')));
-
-    // Blok ringkasan
-    lines.push('');
-    lines.push(esc('RINGKASAN STATISTIK'));
-    lines.push([esc('Total Inspeksi'),              esc(total)         ].join(','));
-    lines.push([esc('Memenuhi Syarat (≥80)'),       esc(memenuhi)      ].join(','));
-    lines.push([esc('Tidak Memenuhi Syarat (<80)'), esc(tidakMem)      ].join(','));
-    lines.push([esc('Persentase Memenuhi'),         esc(pctMemenuhi+'%')].join(','));
-    lines.push([esc('Nilai IKL Rata-rata'),         esc(avgScore)      ].join(','));
-    lines.push([esc('Nilai IKL Tertinggi'),         esc(maxScore)      ].join(','));
-    lines.push([esc('Nilai IKL Terendah'),          esc(minScore)      ].join(','));
-
-    // Gabungkan dengan BOM UTF-8 dan CRLF (standar CSV Windows/Excel)
-    const csv = '\uFEFF' + lines.join('\r\n');
-
-    // ── Download ──
-    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const fname = `rekapitulasi_ikl_sppg_${date}.csv`;
-
-    try {
-      // Metode 1: createObjectURL (desktop dan Android Chrome)
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = fname;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 500);
-    } catch(dlErr) {
-      // Metode 2: data: URI fallback (untuk WebView yang tidak support createObjectURL)
-      const b64 = btoa(unescape(encodeURIComponent(csv)));
-      const a2  = document.createElement('a');
-      a2.href   = 'data:text/csv;charset=utf-8;base64,' + b64;
-      a2.download = fname;
-      a2.style.display = 'none';
-      document.body.appendChild(a2);
-      a2.click();
-      document.body.removeChild(a2);
+    // Bangun CSV dengan BOM UTF-8 agar Excel baca encoding Indonesia dengan benar
+    function escCsv(v) {
+      const s = String(v==null?'':v);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? '"' + s.replace(/"/g, '""') + '"'
+        : s;
     }
 
-    showToast(
-      `✅ Rekapitulasi ${total} inspeksi diekspor. ${memenuhi} memenuhi syarat (${pctMemenuhi}%).`,
-      'success', 6000
-    );
+    const lines = [];
+    // Judul laporan
+    lines.push(`REKAPITULASI HASIL INSPEKSI KESEHATAN LINGKUNGAN (IKL) SPPG`);
+    lines.push(`Dicetak: ${new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})}`);
+    lines.push(`Versi Aplikasi: IKL SPPG v${APP_VERSION}`);
+    lines.push('');
+    // Header tabel
+    lines.push(headers.map(escCsv).join(','));
+    // Data
+    rows.forEach(row => lines.push(row.map(escCsv).join(',')));
+    // Ringkasan
+    lines.push('');
+    lines.push(`RINGKASAN`);
+    lines.push(`Total Inspeksi,${totalInsp}`);
+    lines.push(`Memenuhi Syarat,${memenuhi}`);
+    lines.push(`Tidak Memenuhi Syarat,${tidakMem}`);
+    lines.push(`Rata-rata Nilai IKL,${avgScore}`);
 
+    const csv  = '\uFEFF' + lines.join('\r\n'); // BOM UTF-8
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const date = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    a.href     = url;
+    a.download = `rekapitulasi_ikl_sppg_${date}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast(`Rekapitulasi ${totalInsp} inspeksi berhasil diekspor ke Excel.`, 'success', 5000);
   } catch(err) {
-    showToast('Gagal ekspor Excel: ' + (err.message || err), 'error', 6000);
+    showToast('Gagal ekspor Excel: ' + err.message, 'error', 6000);
   }
 }
 
@@ -7819,12 +7084,6 @@ async function importBackupFile(input) {
           await _idb.saveHistory(item);
           imported++;
         } catch(e) { /* skip duplicate */ }
-      }
-
-      // Pulihkan info lisensi jika di device baru (belum ada lisensi)
-      if(data.license && !getLicenseState()) {
-        safeStorage.setItem(LICENSE_KEY, JSON.stringify(data.license));
-        updateLicenseBadge();
       }
 
       showToast(`Berhasil memulihkan ${imported} dari ${count} inspeksi.`, 'success', 6000);
