@@ -1393,7 +1393,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
   border-radius: var(--r-md);
   overflow: hidden;
   border: 1.5px solid var(--border);
-  background: var(--surface-alt);
+  background: #ffffff;
   transition: border-color var(--dur-fast);
   touch-action: none; /* penting: cegah scroll saat menggambar */
 }
@@ -1403,6 +1403,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
   display: block;
   width: 100%;
   height: 110px;
+  background: #ffffff;
   cursor: crosshair;
   touch-action: none;
 }
@@ -1415,11 +1416,11 @@ textarea.field-input { resize:vertical; min-height:90px; }
   border-top: 1px solid var(--border);
 }
 .sign-overlay {
-  background: rgba(var(--surface-alt-rgb, 245,247,245), .85);
+  background: rgba(245, 250, 247, .88);
   border-radius: var(--r-md);
   font-size: 11px;
-  color: var(--text-muted);
-  font-weight: 500;
+  color: #4a5e52;
+  font-weight: 600;
   text-align: center;
   gap: 6px;
 }
@@ -1456,8 +1457,10 @@ textarea.field-input { resize:vertical; min-height:90px; }
 }
 .sign-status.empty { color: var(--text-muted); background: var(--surface-alt); }
 .sign-status.signed { color: var(--brand); background: var(--brand-light); }
-[data-theme="dark"] .sign-canvas-wrap { background: var(--surface); }
-[data-theme="dark"] .sign-canvas-wrap canvas { background: var(--surface); }
+/* Kanvas tanda tangan tetap berlatar terang di dark mode agar tinta gelap selalu kontras & siap cetak */
+[data-theme="dark"] .sign-canvas-wrap { background: #f8faf9; border-color: var(--border-strong); }
+[data-theme="dark"] .sign-canvas-wrap canvas { background: #f8faf9; }
+[data-theme="dark"] .sign-overlay { background: rgba(24, 34, 29, .82); color: var(--text-secondary); }
 
 /* ── RINGKASAN TEMUAN OTOMATIS (Fitur 7) ── */
 #summary-area {
@@ -1920,6 +1923,9 @@ textarea.field-input { resize:vertical; min-height:90px; }
 #qr-canvas {
   display: block;
   image-rendering: pixelated;
+  max-width: 220px;
+  width: 100%;
+  height: auto;
 }
 #qr-url-text {
   font-size: 10px;
@@ -2389,147 +2395,6 @@ textarea.field-input { resize:vertical; min-height:90px; }
   cursor: pointer;
 }
 </style>
-<!-- ══ MODAL FOTO BUKTI (Tahap 3 #11) ══ -->
-<div id="photo-modal" role="dialog" aria-modal="true" aria-label="Foto Bukti">
-  <div class="photo-modal-box">
-    <div class="photo-modal-title" id="photo-modal-title">&#x1F4F7; Foto Bukti</div>
-
-    <!-- Area preview: gambar atau placeholder -->
-    <div id="photo-preview-wrap">
-      <video id="photo-video" autoplay playsinline muted style="display:none"></video>
-      <img id="photo-img-preview" alt="Preview foto" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:var(--r-sm);">
-      <div id="photo-placeholder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:40px;height:40px;opacity:.25"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        <span style="font-size:12px;color:var(--text-muted)">Belum ada foto</span>
-      </div>
-    </div>
-
-    <!-- Tombol aksi utama -->
-    <div class="photo-modal-actions" id="photo-actions-main">
-      <!-- Ambil dari kamera bawaan (input capture) -->
-      <label id="photo-btn-camera" class="btn btn-primary photo-action-btn" style="cursor:pointer">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Buka Kamera
-        <input type="file" id="photo-input-camera" accept="image/*" capture="environment" style="display:none">
-      </label>
-      <!-- Unggah dari galeri/album -->
-      <label id="photo-btn-gallery" class="btn btn-outline photo-action-btn" style="cursor:pointer">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        Unggah Foto
-        <input type="file" id="photo-input-gallery" accept="image/*" style="display:none">
-      </label>
-    </div>
-
-    <!-- Tombol simpan/hapus/ulangi — muncul setelah ada foto dipilih -->
-    <div class="photo-modal-actions" id="photo-actions-preview" style="display:none">
-      <button id="photo-btn-save" class="btn btn-primary photo-action-btn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Simpan Foto
-      </button>
-      <button id="photo-btn-retake" class="btn btn-outline photo-action-btn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-        Ulangi
-      </button>
-    </div>
-
-    <!-- Tombol hapus — muncul saat sudah ada foto tersimpan -->
-    <div class="photo-modal-actions" id="photo-actions-saved" style="display:none">
-      <button id="photo-btn-delete" class="btn btn-solid-danger photo-action-btn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-        Hapus Foto
-      </button>
-      <button id="photo-btn-change" class="btn btn-outline photo-action-btn" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        Ganti Foto
-      </button>
-    </div>
-
-    <button id="photo-btn-close" class="btn btn-outline" type="button" style="width:100%;margin-top:4px">Tutup</button>
-  </div>
-</div>
-
-
-<!-- ══ MODAL RIWAYAT INSPEKSI (Tahap 3 #13) ══ -->
-<div id="history-modal" role="dialog" aria-modal="true" aria-label="Riwayat Inspeksi">
-  <div class="history-modal-box">
-    <div class="history-modal-head">
-      <h3>&#x1F4CB; Riwayat Inspeksi</h3>
-      <button id="history-modal-close" class="btn btn-outline" style="padding:5px 12px;font-size:12px;" type="button">Tutup</button>
-    </div>
-    <!-- #20 Search bar -->
-    <div style="padding:10px 14px 0;border-bottom:1px solid var(--border)">
-      <div style="position:relative">
-        <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);pointer-events:none"
-             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input type="search" id="history-search" placeholder="Cari nama SPPG atau tanggal..."
-               style="width:100%;padding:8px 10px 8px 32px;border:1.5px solid var(--border);
-                      border-radius:8px;font-size:13px;background:var(--surface-alt);
-                      color:var(--text-primary);box-sizing:border-box;outline:none;
-                      transition:border-color 0.2s"
-               oninput="filterHistoryList(this.value)"
-               onfocus="this.style.borderColor='var(--brand)'"
-               onblur="this.style.borderColor='var(--border)'">
-      </div>
-      <div id="history-count" style="font-size:11px;color:var(--text-muted);padding:6px 2px 8px;min-height:20px"></div>
-    </div>
-    <div class="history-modal-body" id="history-list">
-      <div class="history-empty">Belum ada riwayat tersimpan.</div>
-    </div>
-    <div class="history-modal-foot">
-      <button id="btn-save-history" class="btn btn-primary" type="button" style="font-size:12px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Simpan Inspeksi Saat Ini
-      </button>
-    </div>
-  </div>
-</div>
-
-
-<!-- ══ MODAL QR CODE (Tahap 3 #12) ══ -->
-<div id="qr-modal" role="dialog" aria-modal="true" aria-label="QR Code Laporan">
-  <div class="qr-modal-box">
-    <div class="qr-modal-title">&#x1F4F1; QR Code Laporan</div>
-    <p class="qr-modal-subtitle">Scan untuk membuka atau berbagi data inspeksi ini</p>
-    <div id="qr-canvas-wrap">
-      <canvas id="qr-canvas" width="220" height="220"></canvas>
-    </div>
-    <div class="qr-modal-info" id="qr-info">
-      &#x2139;&#xFE0F; QR Code berisi data ringkas inspeksi. Scan menggunakan kamera HP.
-    </div>
-    <!-- Link section -->
-    <div class="qr-link-section" id="qr-link-section">
-      <div class="qr-link-label">&#x1F517; Atau gunakan link berikut:</div>
-      <div class="qr-link-box">
-        <span id="qr-url-text" class="qr-link-text"></span>
-      </div>
-      <div class="qr-link-actions">
-        <button id="qr-btn-copy-link" class="btn btn-outline qr-link-btn" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          Salin
-        </button>
-        <button id="qr-btn-open-link" class="btn btn-outline qr-link-btn" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          Buka
-        </button>
-        <button id="qr-btn-share-link" class="btn btn-outline qr-link-btn" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          Bagikan
-        </button>
-      </div>
-    </div>
-    <div class="qr-modal-actions">
-      <button id="qr-btn-download" class="btn btn-outline" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Simpan QR
-      </button>
-      <button id="qr-btn-close" class="btn btn-primary" type="button">Tutup</button>
-    </div>
-  </div>
-</div>
-
-
 <script>
 // ── ERROR CATCHER: Harus ada SEBELUM script utama ──
 // Menangkap error nyata sebelum browser sanitize menjadi "Script error."
@@ -2618,6 +2483,159 @@ textarea.field-input { resize:vertical; min-height:90px; }
 <!-- ══ #14 APP LOADING BAR ══ -->
 <div id="app-load-bar"></div>
 
+<!-- ══ MODAL FOTO BUKTI (Tahap 3 #11) ══ -->
+<div id="photo-modal" role="dialog" aria-modal="true" aria-label="Foto Bukti">
+  <div class="photo-modal-box">
+    <div class="photo-modal-title" id="photo-modal-title">&#x1F4F7; Foto Bukti</div>
+
+    <!-- Area preview: gambar atau placeholder -->
+    <div id="photo-preview-wrap">
+      <video id="photo-video" autoplay playsinline muted style="display:none"></video>
+      <img id="photo-img-preview" alt="Preview foto" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:var(--r-sm);">
+      <div id="photo-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:40px;height:40px;opacity:.25"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span style="font-size:12px;color:var(--text-muted)">Belum ada foto</span>
+      </div>
+    </div>
+
+    <!-- Tombol aksi utama -->
+    <div class="photo-modal-actions" id="photo-actions-main">
+      <!-- Ambil dari kamera bawaan (input capture) -->
+      <label id="photo-btn-camera" class="btn btn-primary photo-action-btn" style="cursor:pointer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Buka Kamera
+        <input type="file" id="photo-input-camera" accept="image/*" capture="environment" style="display:none">
+      </label>
+      <!-- Unggah dari galeri/album -->
+      <label id="photo-btn-gallery" class="btn btn-outline photo-action-btn" style="cursor:pointer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Unggah Foto
+        <input type="file" id="photo-input-gallery" accept="image/*" style="display:none">
+      </label>
+    </div>
+
+    <!-- Tombol simpan/hapus/ulangi — muncul setelah ada foto dipilih -->
+    <div class="photo-modal-actions" id="photo-actions-preview" style="display:none">
+      <button id="photo-btn-save" class="btn btn-primary photo-action-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Simpan Foto
+      </button>
+      <button id="photo-btn-retake" class="btn btn-outline photo-action-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        Ulangi
+      </button>
+    </div>
+
+    <!-- Tombol hapus — muncul saat sudah ada foto tersimpan -->
+    <div class="photo-modal-actions" id="photo-actions-saved" style="display:none">
+      <button id="photo-btn-delete" class="btn btn-solid-danger photo-action-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        Hapus Foto
+      </button>
+      <button id="photo-btn-change" class="btn btn-outline photo-action-btn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Ganti Foto
+      </button>
+    </div>
+
+    <button id="photo-btn-close" class="btn btn-outline" type="button" style="width:100%;margin-top:4px">Tutup</button>
+  </div>
+</div>
+
+<!-- ══ MODAL RIWAYAT INSPEKSI (Tahap 3 #13) ══ -->
+<div id="history-modal" role="dialog" aria-modal="true" aria-label="Riwayat Inspeksi">
+  <div class="history-modal-box">
+    <div class="history-modal-head">
+      <h3>&#x1F4CB; Riwayat Inspeksi</h3>
+      <button id="history-modal-close" class="btn btn-outline" style="padding:5px 12px;font-size:12px;" type="button">Tutup</button>
+    </div>
+    <!-- #20 Search bar -->
+    <div style="padding:10px 14px 0;border-bottom:1px solid var(--border)">
+      <div style="position:relative">
+        <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted);pointer-events:none"
+             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="search" id="history-search" placeholder="Cari nama SPPG atau tanggal..."
+               style="width:100%;padding:8px 10px 8px 32px;border:1.5px solid var(--border);
+                      border-radius:8px;font-size:13px;background:var(--surface-alt);
+                      color:var(--text-primary);box-sizing:border-box;outline:none;
+                      transition:border-color 0.2s"
+               oninput="filterHistoryList(this.value)"
+               onfocus="this.style.borderColor='var(--brand)'"
+               onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div id="history-count" style="font-size:11px;color:var(--text-muted);padding:6px 2px 8px;min-height:20px"></div>
+    </div>
+    <div class="history-modal-body" id="history-list">
+      <div class="history-empty">Belum ada riwayat tersimpan.</div>
+    </div>
+    <div class="history-modal-foot">
+      <button id="btn-save-history" class="btn btn-primary" type="button" style="font-size:12px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Simpan Inspeksi Saat Ini
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL QR CODE (Tahap 3 #12) ══ -->
+<div id="qr-modal" role="dialog" aria-modal="true" aria-label="QR Code Laporan">
+  <div class="qr-modal-box">
+    <div class="qr-modal-title">&#x1F4F1; QR Code Laporan</div>
+    <p class="qr-modal-subtitle">Scan untuk membuka atau berbagi data inspeksi ini</p>
+    <div id="qr-canvas-wrap">
+      <canvas id="qr-canvas" width="220" height="220"></canvas>
+    </div>
+    <div class="qr-modal-info" id="qr-info">
+      &#x2139;&#xFE0F; QR Code berisi tautan langsung untuk membuka halaman IKL ini beserta isiannya.
+    </div>
+    <!-- Link section -->
+    <div class="qr-link-section" id="qr-link-section">
+      <div class="qr-link-label">&#x1F517; Atau gunakan link berikut:</div>
+      <div class="qr-link-box">
+        <span id="qr-url-text" class="qr-link-text"></span>
+      </div>
+      <div class="qr-link-actions">
+        <button id="qr-btn-copy-link" class="btn btn-outline qr-link-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Salin
+        </button>
+        <button id="qr-btn-open-link" class="btn btn-outline qr-link-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Buka
+        </button>
+        <button id="qr-btn-share-link" class="btn btn-outline qr-link-btn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Bagikan
+        </button>
+      </div>
+    </div>
+    <div class="qr-modal-actions">
+      <button id="qr-btn-download" class="btn btn-outline" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Simpan QR
+      </button>
+      <button id="qr-btn-close" class="btn btn-primary" type="button">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CUSTOM CONFIRMATION MODAL (Pengganti confirm() native) ══ -->
+<div class="modal-overlay" id="custom-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="custom-confirm-title">
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-icon" id="custom-confirm-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <h3 id="custom-confirm-title" class="modal-title">Konfirmasi</h3>
+    <p id="custom-confirm-desc" class="modal-desc" style="white-space:pre-line"></p>
+    <div class="modal-actions">
+      <button id="custom-confirm-cancel" class="btn btn-outline" type="button" style="flex:1">Batal</button>
+      <button id="custom-confirm-ok" class="btn btn-primary" type="button" style="flex:1">Ya, Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ #15 RESET CONFIRM MODAL ══ -->
 <div id="reset-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="reset-confirm-title">
   <div class="reset-confirm-box">
@@ -2628,7 +2646,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
     <div class="reset-confirm-desc">
       Semua isian formulir akan <strong>dihapus permanen</strong>.<br>
       Riwayat inspeksi yang tersimpan tidak terpengaruh.<br><br>
-      Tombol aktif dalam <span id="reset-countdown">5</span> detik.
+      <span id="reset-countdown-wrap">Tombol aktif dalam <span id="reset-countdown">5</span> detik.</span>
     </div>
     <div class="reset-confirm-actions">
       <button class="btn btn-outline" id="reset-cancel-btn" onclick="closeResetModal()" type="button">Batal</button>
@@ -2731,7 +2749,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
           </div>
           <div class="field-group">
             <label class="field-label">5. Jumlah Porsi</label>
-            <input type="number" id="jumlah_porsi" class="field-input" placeholder="0">
+            <input type="number" id="jumlah_porsi" class="field-input" placeholder="0" min="0">
           </div>
           <div class="field-group">
             <label class="field-label">6. Distribusi Pangan</label>
@@ -2739,11 +2757,11 @@ textarea.field-input { resize:vertical; min-height:90px; }
           </div>
           <div class="field-group">
             <label class="field-label">7. Total Penjamah Pangan</label>
-            <input type="number" id="total_penjamah" class="field-input" placeholder="0">
+            <input type="number" id="total_penjamah" class="field-input" placeholder="0" min="0">
           </div>
           <div class="field-group">
             <label class="field-label">8. Penjamah Terlatih</label>
-            <input type="number" id="penjamah_bersertifikat" class="field-input" placeholder="0">
+            <input type="number" id="penjamah_bersertifikat" class="field-input" placeholder="0" min="0">
           </div>
           <div class="field-group">
             <label class="field-label">9. Nama Pemeriksa</label>
@@ -2758,11 +2776,11 @@ textarea.field-input { resize:vertical; min-height:90px; }
         <div class="form-grid">
           <div class="field-group">
             <label class="field-label">Lintang (Latitude)</label>
-            <input type="text" id="latitude" class="field-input" placeholder="-6.2088" readonly>
+            <input type="text" id="latitude" class="field-input" placeholder="-6.2088" inputmode="decimal" oninput="restoreMapsButton()">
           </div>
           <div class="field-group">
             <label class="field-label">Bujur (Longitude)</label>
-            <input type="text" id="longitude" class="field-input" placeholder="106.8456" readonly>
+            <input type="text" id="longitude" class="field-input" placeholder="106.8456" inputmode="decimal" oninput="restoreMapsButton()">
           </div>
           <!-- Tombol GPS: full-width baris sendiri -->
           <div class="field-group" style="grid-column:1/-1">
@@ -3534,6 +3552,66 @@ const SPECIAL_REQUIREMENTS = [
 function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
 function getMaxScore(v){ return v==='NA'?0:parseInt(v,10); }
 
+// Format tanggal dari input YYYY-MM-DD secara lokal (mencegah pergeseran hari akibat UTC)
+function _formatInputDateID(val, opts){
+  if(!val) return '';
+  const parts = String(val).split('-');
+  if(parts.length === 3){
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    const dt = new Date(y, m, d);
+    if(!isNaN(dt.getTime())){
+      return dt.toLocaleDateString('id-ID', opts || {day:'numeric',month:'long',year:'numeric'});
+    }
+  }
+  const fallback = new Date(val);
+  return !isNaN(fallback.getTime())
+    ? fallback.toLocaleDateString('id-ID', opts || {day:'numeric',month:'long',year:'numeric'})
+    : String(val);
+}
+
+// Custom Confirmation Modal (menggantikan window.confirm agar 100% kompatibel di WebView/Iframe/Mobile)
+function showConfirmModal(title, desc, onConfirm, options){
+  const opts = options || {};
+  const modal = document.getElementById('custom-confirm-modal');
+  if(!modal){
+    if(typeof onConfirm === 'function') onConfirm();
+    return;
+  }
+  const titleEl = document.getElementById('custom-confirm-title');
+  const descEl  = document.getElementById('custom-confirm-desc');
+  const okBtn   = document.getElementById('custom-confirm-ok');
+  const cancelBtn = document.getElementById('custom-confirm-cancel');
+  const iconWrap  = document.getElementById('custom-confirm-icon-wrap');
+
+  if(titleEl) titleEl.textContent = title || 'Konfirmasi';
+  if(descEl)  descEl.textContent  = desc  || '';
+  if(okBtn){
+    okBtn.textContent = opts.okText || 'Ya, Lanjutkan';
+    okBtn.className   = opts.danger ? 'btn btn-solid-danger' : 'btn btn-primary';
+  }
+  if(cancelBtn) cancelBtn.textContent = opts.cancelText || 'Batal';
+  if(iconWrap){
+    iconWrap.style.background = opts.danger ? 'var(--danger-light)' : 'var(--brand-light)';
+    const svg = iconWrap.querySelector('svg');
+    if(svg) svg.style.color = opts.danger ? 'var(--danger)' : 'var(--brand)';
+  }
+
+  const newOk = okBtn.cloneNode(true);
+  const newCancel = cancelBtn.cloneNode(true);
+  okBtn.parentNode.replaceChild(newOk, okBtn);
+  cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+  newCancel.addEventListener('click', ()=>{ modal.classList.remove('active'); });
+  newOk.addEventListener('click', ()=>{
+    modal.classList.remove('active');
+    if(typeof onConfirm === 'function') onConfirm();
+  });
+  modal.onclick = (e)=>{ if(e.target === modal) modal.classList.remove('active'); };
+  modal.classList.add('active');
+}
+
 function saveUIState(type, id, state){
   let s = JSON.parse(safeStorage.getItem(UI_STATE_KEY)||'{}');
   if(!s[type]) s[type]={};
@@ -3634,7 +3712,7 @@ function generateSummary(){
   const namaPemeriksa = document.getElementById('nama_pemeriksa').value || '[Nama Pemeriksa]';
   const tglEl = document.getElementById('tanggal_pemeriksaan');
   const tanggal = (tglEl && tglEl.value)
-    ? new Date(tglEl.value).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})
+    ? _formatInputDateID(tglEl.value, {day:'numeric',month:'long',year:'numeric'})
     : '[Tanggal]';
   const iklScore  = document.getElementById('final-ikl-score').textContent || '-';
   const iklStatus = document.getElementById('ikl-status').textContent || '-';
@@ -3848,14 +3926,9 @@ function setupSummaryButtons(){
 function scrollToEl(el, delay=420){
   if(!el) return;
   setTimeout(()=>{
-    const bar    = document.getElementById('fixed-score-bar');
-    const barH   = bar ? bar.offsetHeight : 120;
-    const toggle = document.getElementById('bar-toggle');
-    const toggleH= toggle ? toggle.offsetHeight : 32;
-    const offset = barH + 12; // sedikit padding di atas bar
     const rect   = el.getBoundingClientRect();
     const scrollY= window.pageYOffset || document.documentElement.scrollTop;
-    const target = rect.top + scrollY - offset;
+    const target = rect.top + scrollY - 16;
     window.scrollTo({ top: Math.max(0, target), behavior:'smooth' });
   }, delay);
 }
@@ -3864,10 +3937,12 @@ function toggleSection(id){
   const body = document.getElementById(id);
   const chev = document.getElementById('chev-'+id);
   const hdr  = document.getElementById('hdr-'+id);
+  if(!body) return;
+  body.style.maxHeight = ''; // pastikan inline maxHeight bersih agar CSS Grid bekerja
   const isOpen = !body.classList.contains('collapsed');
 
   if(isOpen){
-    // Tutup: grid-template-rows → 0fr (tidak perlu set maxHeight)
+    // Tutup: grid-template-rows → 0fr
     body.classList.add('collapsed');
     if(chev) chev.classList.remove('open');
     if(hdr)  hdr.setAttribute('aria-expanded','false');
@@ -3884,8 +3959,7 @@ function toggleSection(id){
       if(!sectionCard) return;
       const rect    = sectionCard.getBoundingClientRect();
       const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-      const barH    = (document.getElementById('fixed-score-bar')||{}).offsetHeight || 0;
-      window.scrollTo({ top: Math.max(0, scrollY + rect.top - barH - 8), behavior:'smooth' });
+      window.scrollTo({ top: Math.max(0, scrollY + rect.top - 12), behavior:'smooth' });
     }, 50);
   }
 }
@@ -3915,8 +3989,6 @@ function toggleCriteriaGroup(g){
   saveUIState('critGroups', g, isHidden);
   // Scroll header grup ke paling atas layar saat dibuka
   if(isHidden){
-    // Cari header element dari semua sumber yang mungkin tersedia
-    // (card view: cIcon/.ikl-card-header, table view: tIcon/tr)
     const hdrEl =
       (cIcon && cIcon.closest('.ikl-card-header')) ||
       (tIcon && tIcon.closest('tr')) ||
@@ -3927,8 +3999,7 @@ function toggleCriteriaGroup(g){
       setTimeout(()=>{
         const rect = hdrEl.getBoundingClientRect();
         const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-        const fixedBarH = (document.getElementById('fixed-score-bar') || {offsetHeight:0}).offsetHeight;
-        window.scrollTo({ top: Math.max(0, scrollY + rect.top - fixedBarH - 8), behavior: 'smooth' });
+        window.scrollTo({ top: Math.max(0, scrollY + rect.top - 12), behavior: 'smooth' });
       }, 80);
     }
   }
@@ -3976,8 +4047,7 @@ function toggleSpecialReqGroup(g, forceHide=false){
       setTimeout(()=>{
         const rect = hdrEl.getBoundingClientRect();
         const scrollY = window.pageYOffset || document.documentElement.scrollTop;
-        const fixedBarH = (document.getElementById('fixed-score-bar') || {offsetHeight:0}).offsetHeight;
-        window.scrollTo({ top: Math.max(0, scrollY + rect.top - fixedBarH - 8), behavior: 'smooth' });
+        window.scrollTo({ top: Math.max(0, scrollY + rect.top - 12), behavior: 'smooth' });
       }, 80);
     }
   }
@@ -4633,48 +4703,51 @@ function initializeFormState(){
 function loadUIState(){
   const raw=safeStorage.getItem(UI_STATE_KEY);
   if(!raw) return;
-  const s=JSON.parse(raw);
-  if(s.sections){ Object.entries(s.sections).forEach(([id,collapsed])=>{
-    const body=document.getElementById(id);
-    const chev=document.getElementById('chev-'+id);
-    const hdr =document.getElementById('hdr-'+id);
-    if(!body) return;
-    // Bagian A dan B selalu terbuka secara default
-    const forceOpen = (id==='sec-a' || id==='sec-b');
-    if(collapsed && !forceOpen){
-      body.classList.add('collapsed'); body.style.maxHeight='0';
-      if(chev) chev.classList.remove('open');
-      if(hdr)  hdr.setAttribute('aria-expanded','false');
-    } else {
-      body.classList.remove('collapsed'); body.style.maxHeight='none';
-      if(chev) chev.classList.add('open');
-      if(hdr)  hdr.setAttribute('aria-expanded','true');
-    }
-  }); }
-  if(s.critGroups){ Object.entries(s.critGroups).forEach(([g,expanded])=>{
-    const grpTbody    = document.getElementById(`gtbody-${g}`);
-    const grpCardWrap = document.getElementById(`gcwrap-${g}`);
-    const hidden = !expanded;
-    if(grpTbody)    grpTbody.classList.toggle('grp-hidden', hidden);
-    if(grpCardWrap) grpCardWrap.classList.toggle('grp-hidden', hidden);
-    const ti=document.getElementById(`gicon-t-${g}`), ci=document.getElementById(`gicon-c-${g}`);
-    [ti,ci].forEach(ic=>{ if(!ic) return;
-      if(hidden){ ic.classList.remove('open'); ic.style.transform='rotate(0deg)'; }
-      else      { ic.classList.add('open');    ic.style.transform='rotate(180deg)'; }
-    });
-  }); }
-  if(s.reqGroups){ Object.entries(s.reqGroups).forEach(([g,expanded])=>{
-    const grpTbody    = document.getElementById(`rgtbody-${g}`);
-    const grpCardWrap = document.getElementById(`rgcwrap-${g}`);
-    const hidden = !expanded;
-    if(grpTbody)    grpTbody.classList.toggle('grp-hidden', hidden);
-    if(grpCardWrap) grpCardWrap.classList.toggle('grp-hidden', hidden);
-    const ti=document.getElementById(`rgicon-t-${g}`), ci=document.getElementById(`rgicon-c-${g}`);
-    [ti,ci].forEach(ic=>{ if(!ic) return;
-      if(hidden){ ic.classList.remove('open'); ic.style.transform='rotate(0deg)'; }
-      else      { ic.classList.add('open');    ic.style.transform='rotate(180deg)'; }
-    });
-  }); }
+  try {
+    const s=JSON.parse(raw);
+    if(s.sections){ Object.entries(s.sections).forEach(([id,collapsed])=>{
+      const body=document.getElementById(id);
+      const chev=document.getElementById('chev-'+id);
+      const hdr =document.getElementById('hdr-'+id);
+      if(!body) return;
+      body.style.maxHeight = ''; // gunakan CSS Grid collapse sepenuhnya
+      // Bagian A dan B selalu terbuka secara default
+      const forceOpen = (id==='sec-a' || id==='sec-b');
+      if(collapsed && !forceOpen){
+        body.classList.add('collapsed');
+        if(chev) chev.classList.remove('open');
+        if(hdr)  hdr.setAttribute('aria-expanded','false');
+      } else {
+        body.classList.remove('collapsed');
+        if(chev) chev.classList.add('open');
+        if(hdr)  hdr.setAttribute('aria-expanded','true');
+      }
+    }); }
+    if(s.critGroups){ Object.entries(s.critGroups).forEach(([g,expanded])=>{
+      const grpTbody    = document.getElementById(`gtbody-${g}`);
+      const grpCardWrap = document.getElementById(`gcwrap-${g}`);
+      const hidden = !expanded;
+      if(grpTbody)    grpTbody.classList.toggle('grp-hidden', hidden);
+      if(grpCardWrap) grpCardWrap.classList.toggle('grp-hidden', hidden);
+      const ti=document.getElementById(`gicon-t-${g}`), ci=document.getElementById(`gicon-c-${g}`);
+      [ti,ci].forEach(ic=>{ if(!ic) return;
+        if(hidden){ ic.classList.remove('open'); ic.style.transform='rotate(0deg)'; }
+        else      { ic.classList.add('open');    ic.style.transform='rotate(180deg)'; }
+      });
+    }); }
+    if(s.reqGroups){ Object.entries(s.reqGroups).forEach(([g,expanded])=>{
+      const grpTbody    = document.getElementById(`rgtbody-${g}`);
+      const grpCardWrap = document.getElementById(`rgcwrap-${g}`);
+      const hidden = !expanded;
+      if(grpTbody)    grpTbody.classList.toggle('grp-hidden', hidden);
+      if(grpCardWrap) grpCardWrap.classList.toggle('grp-hidden', hidden);
+      const ti=document.getElementById(`rgicon-t-${g}`), ci=document.getElementById(`rgicon-c-${g}`);
+      [ti,ci].forEach(ic=>{ if(!ic) return;
+        if(hidden){ ic.classList.remove('open'); ic.style.transform='rotate(0deg)'; }
+        else      { ic.classList.add('open');    ic.style.transform='rotate(180deg)'; }
+      });
+    }); }
+  } catch(e){ console.warn('UI state parse error:', e); }
 }
 
 function resetForm(){
@@ -4781,7 +4854,10 @@ function resetForm(){
 // ═══════════════════════════════════════════════════════
 // PDF EXPORT
 // ═══════════════════════════════════════════════════════
-function getVal(id){ const e=document.getElementById(id); return e?e.value||'-':'-'; }
+function getVal(id){
+  const e=document.getElementById(id);
+  return e && e.value ? _escHtml(e.value.trim()) : '-';
+}
 function getRadio(name){ const e=document.querySelector(`input[name="${name}"]:checked`); return e?e.value:'-'; }
 
 async function buildReportHTML(){
@@ -4791,6 +4867,23 @@ async function buildReportHTML(){
   const iklStatus=document.getElementById('ikl-status').textContent;
 
   const watermarkHTML = '';
+
+  // Ambil daftar foto terlebih dahulu agar kolom ke-11 (Foto) di tabel B sinkron
+  const fotoEntries = [];
+  const fotoSet = new Set();
+  try{
+    const allPhotoKeys = await _idb.getAllPhotoKeys();
+    for(const key of allPhotoKeys){
+      if(!key.startsWith('ikl_foto_')) continue;
+      const critNo = key.replace('ikl_foto_','');
+      const dataURL = await _idb.getPhoto(key);
+      if(!dataURL) continue;
+      fotoSet.add(String(critNo));
+      const crit = CRITERIA.find(cr => String(cr.no) === String(critNo) && !cr.isHeader);
+      const caption = crit ? crit.text : 'Kriteria ' + critNo;
+      fotoEntries.push({ critNo, caption, dataURL });
+    }
+  } catch(e){ console.warn('Photo fetch error:', e); }
 
   let critRows='';
   CRITERIA.forEach(c=>{
@@ -4804,7 +4897,9 @@ async function buildReportHTML(){
         const disp=parseInt(v)>0?`<b style="color:#b91c1c">${v}</b>`:'—';
         return `<td style="border:1px solid #ccc;padding:4px;text-align:center;font-size:9pt;">${disp}</td>`;
       }).join('');
-      critRows+=`<tr><td style="border:1px solid #ccc;padding:4px;text-align:center;font-size:9pt;font-weight:600;color:#2D5A3D;">${dn}</td><td style="border:1px solid #ccc;padding:4px;font-size:9pt;${c.displayNo?'padding-left:16px':''}">${c.text}</td>${cells}</tr>`;
+      const hasFoto = fotoSet.has(String(c.no));
+      const fotoCell = `<td style="border:1px solid #ccc;padding:4px;text-align:center;font-size:8.5pt;color:${hasFoto?'#2D5A3D':'#bbb'};font-weight:${hasFoto?'700':'400'};">${hasFoto?'Ada':'—'}</td>`;
+      critRows+=`<tr><td style="border:1px solid #ccc;padding:4px;text-align:center;font-size:9pt;font-weight:600;color:#2D5A3D;">${dn}</td><td style="border:1px solid #ccc;padding:4px;font-size:9pt;${c.displayNo?'padding-left:16px':''}">${c.text}</td>${cells}${fotoCell}</tr>`;
     }
   });
 
@@ -4822,6 +4917,7 @@ async function buildReportHTML(){
     }
   });
 
+  const summaryRaw = document.getElementById('summary-text').textContent || '-';
   let reportHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan IKL SPPG — ${getVal('nama_sppg')}</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -4864,10 +4960,10 @@ async function buildReportHTML(){
   <tbody>${reqRows}</tbody></table>
   <div class="sec">D. KESIMPULAN DAN PENGESAHAN</div>
   <table class="nb"><tbody>
-    <tr class="nb"><td style="width:28%;font-weight:700">Nilai Akhir IKL</td><td style="width:2%">:</td><td style="font-weight:700;font-size:12pt">${iklScore}</td></tr>
-    <tr class="nb"><td style="font-weight:700">Status</td><td>:</td><td style="font-weight:700;text-transform:uppercase">${iklStatus}</td></tr>
-    <tr class="nb"><td style="font-weight:700;vertical-align:top">Catatan / Saran</td><td style="vertical-align:top">:</td><td style="vertical-align:top">${getVal('catatan_akhir')}</td></tr>
-    <tr class="nb"><td style="font-weight:700;vertical-align:top">Ringkasan Temuan</td><td style="vertical-align:top">:</td><td style="vertical-align:top;font-size:8pt;white-space:pre-wrap;">${document.getElementById('summary-text').textContent || '-'}</td></tr>
+    <tr class="nb"><td style="width:28%;font-weight:700">Nilai Akhir IKL</td><td style="width:2%">:</td><td style="font-weight:700;font-size:12pt">${_escHtml(iklScore)}</td></tr>
+    <tr class="nb"><td style="font-weight:700">Status</td><td>:</td><td style="font-weight:700;text-transform:uppercase">${_escHtml(iklStatus)}</td></tr>
+    <tr class="nb"><td style="font-weight:700;vertical-align:top">Catatan / Saran</td><td style="vertical-align:top">:</td><td style="vertical-align:top;white-space:pre-wrap;">${getVal('catatan_akhir')}</td></tr>
+    <tr class="nb"><td style="font-weight:700;vertical-align:top">Ringkasan Temuan</td><td style="vertical-align:top">:</td><td style="vertical-align:top;font-size:8pt;white-space:pre-wrap;">${_escHtml(summaryRaw)}</td></tr>
   </tbody></table>
   <br>
   <table class="nb"><tr class="nb">
@@ -4884,58 +4980,39 @@ async function buildReportHTML(){
   </tr></table>
   <\/body><\/html>`;
 
-  // ── Lampiran foto: ambil dari IDB dan tambahkan di akhir ──
+  // ── Lampiran foto: tambahkan di akhir jika ada ──
   let photoPages = '';
-  try{
-    const allPhotoKeys = await _idb.getAllPhotoKeys();
-    const fotoEntries = [];
-    for(const key of allPhotoKeys){
-      if(!key.startsWith('ikl_foto_')) continue;
-      const critNo = key.replace('ikl_foto_','');
-      const dataURL = await _idb.getPhoto(key);
-      if(!dataURL) continue;
-      // Cari teks kriteria dari CRITERIA array
-      const crit = CRITERIA.find(cr => String(cr.no) === String(critNo) && !cr.isHeader);
-      const caption = crit ? crit.text : 'Kriteria ' + critNo;
-      fotoEntries.push({ critNo, caption, dataURL });
-    }
+  if(fotoEntries.length > 0){
+    fotoEntries.sort((a,b)=> parseFloat(a.critNo) - parseFloat(b.critNo));
+    photoPages += `
+    <div style="page-break-before:always;padding:20px 24px;">
+      <h2 style="font-size:13pt;font-weight:700;color:#1a3c2b;border-bottom:2px solid #1a3c2b;padding-bottom:6px;margin-bottom:16px;">
+        LAMPIRAN FOTO BUKTI INSPEKSI
+      </h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">`;
 
-    if(fotoEntries.length > 0){
-      // Urutkan berdasarkan nomor kriteria
-      fotoEntries.sort((a,b)=> parseFloat(a.critNo) - parseFloat(b.critNo));
-
-      // Header halaman lampiran
+    fotoEntries.forEach(({ critNo, caption, dataURL })=>{
       photoPages += `
-      <div style="page-break-before:always;padding:20px 24px;">
-        <h2 style="font-size:13pt;font-weight:700;color:#1a3c2b;border-bottom:2px solid #1a3c2b;padding-bottom:6px;margin-bottom:16px;">
-          LAMPIRAN FOTO BUKTI INSPEKSI
-        </h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">`;
+        <div style="break-inside:avoid;border:1px solid #ccc;border-radius:6px;overflow:hidden;">
+          <img src="${dataURL}" alt="Foto kriteria ${_escHtml(critNo)}"
+            style="width:100%;height:200px;object-fit:cover;display:block;">
+          <div style="padding:8px 10px;background:#f9fafb;">
+            <div style="font-size:8pt;font-weight:700;color:#1a3c2b;margin-bottom:2px;">No. ${_escHtml(critNo)}</div>
+            <div style="font-size:7.5pt;color:#374151;line-height:1.4;">${_escHtml(caption)}</div>
+          </div>
+        </div>`;
+    });
 
-      fotoEntries.forEach(({ critNo, caption, dataURL })=>{
-        photoPages += `
-          <div style="break-inside:avoid;border:1px solid #ccc;border-radius:6px;overflow:hidden;">
-            <img src="${dataURL}" alt="Foto kriteria ${critNo}"
-              style="width:100%;height:200px;object-fit:cover;display:block;">
-            <div style="padding:8px 10px;background:#f9fafb;">
-              <div style="font-size:8pt;font-weight:700;color:#1a3c2b;margin-bottom:2px;">No. ${critNo}</div>
-              <div style="font-size:7.5pt;color:#374151;line-height:1.4;">${caption}</div>
-            </div>
-          </div>`;
-      });
-
-      photoPages += `
-        </div>
-      </div>`;
-    }
-  } catch(photoErr){ console.warn('Photo lampiran error:', photoErr); }
+    photoPages += `
+      </div>
+    </div>`;
+  }
 
   // Sisipkan lampiran sebelum </body></html>
   const bodyClose = reportHtml.lastIndexOf('</body>');
   if(bodyClose >= 0 && photoPages){
     reportHtml = reportHtml.slice(0, bodyClose) + photoPages + reportHtml.slice(bodyClose);
   } else if(photoPages) {
-    // Fallback: append di akhir jika </body> tidak ditemukan
     reportHtml += photoPages;
   }
   return reportHtml;
@@ -5042,17 +5119,16 @@ function initSignatureCanvas(id){
 
   function getPos(e, cv){
     const rect = cv.getBoundingClientRect();
-    if(e.touches){ return { x:e.touches[0].clientX-rect.left, y:e.touches[0].clientY-rect.top }; }
+    if(e.touches && e.touches.length > 0){ return { x:e.touches[0].clientX-rect.left, y:e.touches[0].clientY-rect.top }; }
     return { x:e.clientX-rect.left, y:e.clientY-rect.top };
   }
 
   function startDraw(e){
     if(!isSelected()){
-      // Delegasikan ke _onTap untuk double-tap detection
-      if(e && e.cancelable) e.preventDefault();
+      // Jangan panggil e.preventDefault() saat belum aktif agar event click/tap dapat mengaktifkan kanvas
       return;
     }
-    e.preventDefault();
+    if(e && e.cancelable) e.preventDefault();
     drawing = true; hasMoved = false;
     const pos = getPos(e, canvas);
     lastX = pos.x; lastY = pos.y;
@@ -5061,7 +5137,7 @@ function initSignatureCanvas(id){
 
   function draw(e){
     if(!drawing) return;
-    e.preventDefault();
+    if(e && e.cancelable) e.preventDefault();
     const pos = getPos(e, canvas);
     ctx.lineTo(pos.x, pos.y); ctx.stroke();
     lastX = pos.x; lastY = pos.y; hasMoved = true;
@@ -5084,31 +5160,35 @@ function initSignatureCanvas(id){
     }, 500);
   }
 
-  // Mouse
-  canvas.addEventListener('mousedown',  startDraw, {passive:false});
-  canvas.addEventListener('mousemove',  draw,      {passive:false});
-  canvas.addEventListener('mouseup',    endDraw);
-  canvas.addEventListener('mouseleave', endDraw);
-  // Touch
-  canvas.addEventListener('touchstart', startDraw, {passive:false});
-  canvas.addEventListener('touchmove',  draw,      {passive:false});
-  canvas.addEventListener('touchend',   endDraw,   {passive:false});
-  // Pointer
+  // Gunakan PointerEvent jika didukung, fallback ke Mouse + Touch agar event tidak terduplikasi
   if(window.PointerEvent){
     canvas.addEventListener('pointerdown', e=>{
-      try{ if(canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId); }catch(_){}
+      if(isSelected()){
+        try{ if(canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId); }catch(_){}
+      }
       startDraw(e);
     }, {passive:false});
     canvas.addEventListener('pointermove',   draw,    {passive:false});
     canvas.addEventListener('pointerup',     endDraw, {passive:false});
     canvas.addEventListener('pointercancel', endDraw);
+  } else {
+    canvas.addEventListener('mousedown',  startDraw, {passive:false});
+    canvas.addEventListener('mousemove',  draw,      {passive:false});
+    canvas.addEventListener('mouseup',    endDraw);
+    canvas.addEventListener('mouseleave', endDraw);
+    canvas.addEventListener('touchstart', startDraw, {passive:false});
+    canvas.addEventListener('touchmove',  draw,      {passive:false});
+    canvas.addEventListener('touchend',   endDraw,   {passive:false});
   }
 
   // Ketuk 2x untuk mengaktifkan canvas (double-tap)
-  let _tapCount = 0, _tapTimer = null;
+  let _tapCount = 0, _tapTimer = null, _lastTapTime = 0;
 
   function _onTap(e){
     if(isSelected()) return;
+    const now = Date.now();
+    if(now - _lastTapTime < 50) return; // cegah duplikasi dari touch + click sintetis
+    _lastTapTime = now;
     _tapCount++;
     if(_tapTimer) clearTimeout(_tapTimer);
     if(_tapCount >= 2){
@@ -5120,20 +5200,16 @@ function initSignatureCanvas(id){
       // Feedback visual: teks overlay berubah saat ketukan pertama
       const ovSpan = wrap ? wrap.querySelector('.sign-overlay span') : null;
       if(ovSpan){
-        const orig = ovSpan.textContent;
+        const orig = 'Ketuk 2× untuk tanda tangan';
         ovSpan.textContent = 'Ketuk sekali lagi untuk mulai';
         setTimeout(()=>{ if(!isSelected()) ovSpan.textContent = orig; }, 1200);
       }
     }
   }
 
-  canvas.addEventListener('click', _onTap);
   if(wrap && !wrap._signClickBound){
     wrap._signClickBound = true;
     wrap.addEventListener('click', _onTap);
-    wrap.addEventListener('touchend', (e)=>{
-      if(!isSelected()) _onTap(e);
-    }, {passive:false});
   }
 
   // Resize observer
@@ -6069,16 +6145,19 @@ const _QR = (function() {
   function encode(text, canvasEl, cellSize, ecLevel) {
     if (!canvasEl || !text) return false;
     try {
+      const str = String(text);
+      // Gunakan koreksi error 'L' untuk URL panjang agar modul QR lebih renggang & mudah dipindai kamera HP
+      const level = ecLevel || (str.length > 180 ? 'L' : 'M');
       // typeNumber = 0 otomatis memilih versi optimal (1 s/d 40)
-      const qr = qrcode(0, ecLevel || 'M');
-      qr.addData(String(text), 'Byte');
+      const qr = qrcode(0, level);
+      qr.addData(str, 'Byte');
       qr.make();
 
       const moduleCount = qr.getModuleCount();
       const quiet = 4; // Standar ISO 18004 quiet zone (4 modul)
       const totalModules = moduleCount + quiet * 2;
-      // Hitung ukuran sel agar pas ~220px-260px di dalam modal namun tetap tajam (integer pixel)
-      const cs = cellSize || Math.max(2, Math.min(6, Math.floor(240 / totalModules)));
+      // Hitung ukuran sel integer pixel agar tajam saat ditampilkan maupun diunduh
+      const cs = cellSize || Math.max(4, Math.min(8, Math.floor(320 / totalModules)));
       const size = totalModules * cs;
 
       canvasEl.width = size;
@@ -6099,7 +6178,7 @@ const _QR = (function() {
           }
         }
       }
-      return { version: qr.getTypeNumber(), moduleCount: moduleCount };
+      return { version: qr.getTypeNumber(), moduleCount: moduleCount, level: level };
     } catch (err) {
       console.warn('qrcode-generator encode error:', err);
       return false;
@@ -6108,62 +6187,88 @@ const _QR = (function() {
   return { encode };
 })();
 
+// Daftar ID field teks yang disertakan ke dalam tautan QR
+const _QR_FIELD_IDS = [
+  'nama_sppg',
+  'alamat_sppg',
+  'nama_pengelola',
+  'kontak_pengelola',
+  'jumlah_porsi',
+  'distribusi_pangan',
+  'total_penjamah',
+  'penjamah_bersertifikat',
+  'nama_pemeriksa',
+  'tanggal_pemeriksaan',
+  'latitude',
+  'longitude',
+  'catatan_akhir',
+  'ttd_pemeriksa_nama',
+  'ttd_pengelola_nama'
+];
 
-
-
-
-// ── Kompres data form untuk QR (hanya data non-default) ──
+// ── Kompres data form untuk QR (menyertakan seluruh field aktif & skor) ──
 function _compressFormDataForQR(){
-  // Format ultra-compact:
-  // Header: v1|YYYY-MM-DD|score
-  // Data: setiap entry non-default = "crit_no area nilai" dipisah koma
-  // Contoh: "v1|2026-05-05|94.5|1A1,3B2,5E3,r9.1T"
-  // Total: ~50-120 bytes untuk inspeksi umum
-
-  const tanggal = document.getElementById('tanggal_pemeriksaan').value || '';
-  const score   = document.getElementById('final-ikl-score').textContent || '0';
-  const namaSPPG = (document.getElementById('nama_sppg').value||'').substring(0,20);
+  // Format v2: v2|idx:val~idx:val|1A1,3B2,r9.a.1
+  const fieldPairs = [];
+  _QR_FIELD_IDS.forEach((id, idx) => {
+    const el = document.getElementById(id);
+    if (!el || !el.value) return;
+    let val = el.value.trim();
+    if (!val) return;
+    // Batasi panjang catatan di URL agar QR tetap ringkas & mudah dipindai
+    if (id === 'catatan_akhir' && val.length > 250) {
+      val = val.substring(0, 250);
+    }
+    // Sanitasi delimiter internal
+    const cleanVal = val.replace(/\|/g, '/').replace(/~/g, '-');
+    fieldPairs.push(idx.toString(36) + ':' + cleanVal);
+  });
 
   const entries = [];
+  const seenCrit = new Set();
 
-  // Kriteria non-NA non-default (_t input saja)
-  document.querySelectorAll('input[type="radio"]:checked').forEach(el=>{
-    if(el.value && el.value !== '0' && el.name.endsWith('_t')){
-      const m = el.name.match(/^crit-(\w+)-([A-H])_t$/);
-      if(m) entries.push(m[1] + m[2] + el.value);
+  // Kriteria non-NA (nilai > 0)
+  document.querySelectorAll('.score-input:checked').forEach(el => {
+    if (el.value && el.value !== '0') {
+      const base = el.name.replace(/_[tm]$/, '');
+      if (!seenCrit.has(base)) {
+        seenCrit.add(base);
+        const m = base.match(/^crit-(\w+)-([A-H])$/);
+        if (m) entries.push(m[1] + m[2] + el.value);
+      }
     }
   });
 
-  // Special req Tidak
-  document.querySelectorAll('input[name$="_t"].special-req-input:checked').forEach(el=>{
-    if(el.value === 'Tidak'){
-      const k = el.name.replace(/^req-/,'').replace(/_t$/,'');
-      entries.push('r' + k);
+  // Persyaratan khusus bernilai 'Tidak'
+  const seenReq = new Set();
+  document.querySelectorAll('.special-req-input:checked').forEach(el => {
+    if (el.value === 'Tidak') {
+      const base = el.name.replace(/_[tm]$/, '');
+      if (!seenReq.has(base)) {
+        seenReq.add(base);
+        const k = base.replace(/^req-/, '');
+        entries.push('r' + k);
+      }
     }
   });
 
-  // Compact string — tidak pakai JSON
-  const parts = ['v1', tanggal, score, namaSPPG, entries.join(',')];
-  return parts.join('|');
+  return ['v2', fieldPairs.join('~'), entries.join(',')].join('|');
 }
 
-// ── URL builder untuk QR ──
-function _buildQRUrl(data){
-  // Kembalikan data as-is (format ringkas teks, bukan URL)
-  // URL panjang melebihi kapasitas QR v20 (669 bytes)
-  // Format: v1|tanggal|score|nama|entries
-  return data;
-}
-
-// Fungsi terpisah untuk membangun URL share (untuk tombol salin/buka)
+// Fungsi membangun URL lengkap untuk akses halaman IKL beserta datanya
 function _buildShareUrl(data){
-  const base = window.location.href.split('?')[0];
+  const base = window.location.href.split('?')[0].split('#')[0];
   const encoded = btoa(unescape(encodeURIComponent(data)));
   const safe = encoded.replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
   return base + '?d=' + safe;
 }
 
-// ── Baca URL params dan auto-fill form ──
+// ── URL builder untuk QR: menggunakan tautan lengkap yang sama persis dengan yang ditampilkan ──
+function _buildQRUrl(data){
+  return _buildShareUrl(data);
+}
+
+// ── Baca URL params dan auto-fill seluruh form ──
 function _readQRFromURL(){
   try{
     const params = new URLSearchParams(window.location.search);
@@ -6174,33 +6279,72 @@ function _readQRFromURL(){
     const pad  = b64.length % 4 === 0 ? '' : '='.repeat(4 - b64.length % 4);
     const text = decodeURIComponent(escape(atob(b64 + pad)));
 
-    // Format compact: "v1|tanggal|score|nama|entries"
-    if(!text.startsWith('v1|')) return;
-    const parts    = text.split('|');
-    const tanggal  = parts[1] || '';
-    const namaSPPG = parts[3] || '';
-    const entryStr = parts[4] || '';
+    if(!text.startsWith('v1|') && !text.startsWith('v2|')) return;
 
     isInternalUpdate = true;
 
-    // Isi text fields
-    if(tanggal){
-      const el = document.getElementById('tanggal_pemeriksaan');
-      if(el) el.value = tanggal;
-    }
-    if(namaSPPG){
-      const el = document.getElementById('nama_sppg');
-      if(el) el.value = namaSPPG;
+    // Reset state ke nilai awal terlebih dahulu agar tidak tercampur data lokal sebelumnya
+    appState.scores = {};
+    appState.specialReqs = {};
+    _QR_FIELD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.querySelectorAll('.score-input[value="0"]').forEach(el => {
+      el.checked = true;
+      styleRadioLabels(el.name);
+    });
+    document.querySelectorAll('.special-req-input[value="Ya"]').forEach(el => {
+      el.checked = true;
+      styleSpecialReqLabels(el.name);
+    });
+
+    let entryStr = '';
+
+    if (text.startsWith('v2|')) {
+      const parts = text.split('|');
+      const fieldStr = parts[1] || '';
+      entryStr = parts[2] || '';
+
+      if (fieldStr) {
+        fieldStr.split('~').forEach(pair => {
+          const colonIdx = pair.indexOf(':');
+          if (colonIdx < 0) return;
+          const idx = parseInt(pair.substring(0, colonIdx), 36);
+          const val = pair.substring(colonIdx + 1);
+          const fieldId = _QR_FIELD_IDS[idx];
+          if (fieldId) {
+            const el = document.getElementById(fieldId);
+            if (el) el.value = val;
+          }
+        });
+      }
+    } else {
+      // Dukungan mundur format lama: "v1|tanggal|score|nama|entries"
+      const parts    = text.split('|');
+      const tanggal  = parts[1] || '';
+      const namaSPPG = parts[3] || '';
+      entryStr       = parts[4] || '';
+
+      if(tanggal){
+        const el = document.getElementById('tanggal_pemeriksaan');
+        if(el) el.value = tanggal;
+      }
+      if(namaSPPG){
+        const el = document.getElementById('nama_sppg');
+        if(el) el.value = namaSPPG;
+      }
     }
 
-    // Restore entries
+    // Restore entries (skor kriteria & persyaratan khusus)
     if(entryStr){
       entryStr.split(',').forEach(entry=>{
         if(!entry) return;
         if(entry.startsWith('r')){
-          // Special req: "r9.1" → req-9.1
+          // Special req: "r9.a.1" → req-9.a.1
           const k    = entry.substring(1);
           const name = 'req-' + k;
+          appState.specialReqs[name] = 'Tidak';
           ['_t','_m'].forEach(sfx=>{
             const r = document.querySelector('input[name="'+name+sfx+'"][value="Tidak"]');
             if(r){ r.checked=true; styleSpecialReqLabels(name+sfx); }
@@ -6210,8 +6354,10 @@ function _readQRFromURL(){
           const m = entry.match(/^(\w+)([A-H])(\d)$/);
           if(m){
             const cno=m[1], area=m[2], val=m[3];
+            const cleanBase = 'crit-' + cno + '-' + area;
+            appState.scores[cleanBase] = parseInt(val, 10);
             ['_t','_m'].forEach(sfx=>{
-              const name = 'crit-'+cno+'-'+area+sfx;
+              const name = cleanBase + sfx;
               const r = document.querySelector('input[name="'+name+'"][value="'+val+'"]');
               if(r){ r.checked=true; styleRadioLabels(name); }
             });
@@ -6222,9 +6368,16 @@ function _readQRFromURL(){
 
     isInternalUpdate = false;
     calculateScore();
+    restoreMapsButton();
     saveFormData();
-    try{ history.replaceState(null,'',window.location.pathname); }catch(e){}
-  }catch(e){ console.warn('QR URL read error:',e); }
+    try{ history.replaceState(null, '', window.location.pathname); }catch(e){}
+    if (typeof showToast === 'function') {
+      setTimeout(() => showToast('Data inspeksi berhasil dimuat dari tautan QR.', 'success', 4000), 400);
+    }
+  }catch(e){
+    isInternalUpdate = false;
+    console.warn('QR URL read error:',e);
+  }
 }
 
 // ── Setup modal QR ──
@@ -6234,46 +6387,32 @@ function setupQRFeature(){
   const btnClose  = document.getElementById('qr-btn-close');
   const btnDL     = document.getElementById('qr-btn-download');
   const canvas    = document.getElementById('qr-canvas');
-  const urlText   = document.getElementById('qr-url-text'); // sama dengan urlTextEl
+  const urlText   = document.getElementById('qr-url-text');
   const infoEl    = document.getElementById('qr-info');
 
   if(!modal||!btnShow||!btnClose||!canvas) return;
 
   btnShow.addEventListener('click', ()=>{
-    // Generate data ringkas untuk QR (format teks, bukan URL)
-    const data      = _compressFormDataForQR();
-    const qrText    = _buildQRUrl(data);            // teks ringkas untuk QR
-    const shareUrl  = _buildShareUrl(data);          // URL panjang untuk tombol salin
-    const dataLen   = new Blob([qrText]).size;
-    const entries   = (data.split('|')[4]||'').split(',').filter(Boolean).length;
+    // Generate tautan URL halaman IKL yang sedang terbuka beserta datanya
+    const data     = _compressFormDataForQR();
+    const shareUrl = _buildShareUrl(data);
+    const qrResult = _QR.encode(shareUrl, canvas);
 
-    // Pilih cell size: lebih kecil untuk data besar
-    const estVersion = Math.ceil(dataLen / 20);
-    const cellSize = estVersion > 15 ? 3 : estVersion > 10 ? 3 : 4;
+    if(urlText) urlText.textContent = shareUrl;
 
-    const ok = _QR.encode(qrText, canvas, cellSize);
-
-    if(ok){
-      // URL text untuk salin = URL panjang; QR = teks ringkas
-      if(urlText) urlText.textContent = shareUrl;
+    if(qrResult){
       infoEl.innerHTML =
-        '\u2139\uFE0F QR berisi data ringkas (' + dataLen + ' bytes) | ' + entries + ' nilai terisi' +
-        '<br>Scan dengan kamera untuk membaca skor. Gunakan tombol Salin untuk URL lengkap.';
+        '\u2139\uFE0F QR Code ini berisi <strong>tautan langsung</strong> yang sama dengan link di bawah.' +
+        '<br>Scan dengan kamera HP untuk membuka halaman IKL ini beserta datanya.';
     } else {
-      // Fallback: QR hanya skor + nama singkat
-      const score    = document.getElementById('final-ikl-score').textContent||'0';
-      const status   = document.getElementById('ikl-status').textContent||'';
-      const nama     = (document.getElementById('nama_sppg').value||'').substring(0,15);
-      const tgl      = document.getElementById('tanggal_pemeriksaan').value||'';
-      const fallback = `IKL SPPG\n${nama}\nTgl: ${tgl}\nNilai: ${score}\n${status}`;
-      const ok2      = _QR.encode(fallback, canvas, 4);
-      if(ok2){
-        if(urlText) urlText.textContent = shareUrl;
+      // Fallback jika URL sangat panjang: gunakan URL halaman dasar tanpa parameter panjang
+      const baseUrl = window.location.href.split('?')[0].split('#')[0];
+      const okBase  = _QR.encode(baseUrl, canvas);
+      if(urlText) urlText.textContent = baseUrl;
+      if(okBase){
         infoEl.innerHTML =
-          '\u26A0\uFE0F QR Mode Ringkas: hanya info utama.' +
-          '<br>Gunakan tombol Salin untuk URL data lengkap.';
+          '\u26A0\uFE0F QR berisi tautan halaman dasar IKL SPPG.';
       } else {
-        if(urlText) urlText.textContent = shareUrl;
         canvas.width=canvas.height=100;
         const ctx2=canvas.getContext('2d');
         if(ctx2){ ctx2.fillStyle='#f5f5f5'; ctx2.fillRect(0,0,100,100);
@@ -6358,12 +6497,15 @@ function setupQRFeature(){
 // Simpan snapshot inspeksi saat ini ke IDB
 async function saveInspectionHistory(){
   try{
-    const namaSPPG  = document.getElementById('nama_sppg').value.trim() || 'Tanpa Nama';
-    const tanggal   = document.getElementById('tanggal_pemeriksaan').value || '';
-    const iklEl     = document.getElementById('final-ikl-score');
-    const statusEl  = document.getElementById('ikl-status');
-    const iklScore  = iklEl  ? parseFloat(iklEl.textContent)  : 0;
-    const iklStatus = statusEl ? statusEl.textContent : '';
+    const namaSPPG      = document.getElementById('nama_sppg').value.trim() || 'Tanpa Nama';
+    const namaPemeriksa = document.getElementById('nama_pemeriksa').value.trim() || '';
+    const tanggal       = document.getElementById('tanggal_pemeriksaan').value || '';
+    const iklEl         = document.getElementById('final-ikl-score');
+    const statusEl      = document.getElementById('ikl-status');
+    const totalDevEl    = document.getElementById('total-score-value');
+    const iklScore      = iklEl  ? parseFloat(iklEl.textContent)  : 0;
+    const iklStatus     = statusEl ? statusEl.textContent : '';
+    const totalDeviation= totalDevEl ? (parseInt(totalDevEl.textContent, 10) || 0) : 0;
 
     // Ambil form data saat ini
     const fd = { textInputs:{}, radioInputs:{} };
@@ -6380,20 +6522,21 @@ async function saveInspectionHistory(){
 
     const now = Date.now();
     const snapshot = {
-      id:        now,
-      timestamp: now,
-      namaSPPG:  namaSPPG,
-      tanggal:   tanggal,
-      iklScore:  iklScore.toFixed(2),
-      iklStatus: iklStatus,
-      isOk:      iklScore >= 80,
-      formData:  fd,
-      signatures:{ pemeriksa: signP, pengelola: signG },
+      id:             now,
+      timestamp:      now,
+      namaSPPG:       namaSPPG,
+      namaPemeriksa:  namaPemeriksa,
+      tanggal:        tanggal,
+      iklScore:       iklScore.toFixed(2),
+      totalDeviation: totalDeviation,
+      iklStatus:      iklStatus,
+      isOk:           iklScore >= 80,
+      formData:       fd,
+      signatures:     { pemeriksa: signP, pengelola: signG },
     };
 
     const ok = await _idb.saveHistory(snapshot);
     if(ok){
-      // Tampilkan feedback
       const btn = document.getElementById('btn-save-history');
       if(btn){
         const orig = btn.innerHTML;
@@ -6401,9 +6544,8 @@ async function saveInspectionHistory(){
         btn.style.background = 'var(--brand)';
         setTimeout(()=>{ btn.innerHTML = orig; btn.style.background = ''; }, 1500);
       }
-      // Refresh daftar
+      showToast('Inspeksi "' + namaSPPG + '" disimpan ke riwayat.', 'success', 3500);
       renderHistoryList();
-      // Cek reminder backup (#19)
       setTimeout(checkBackupReminder, 2000);
     }
   }catch(e){ console.warn('Save history error:', e); }
@@ -6533,7 +6675,7 @@ async function renderHistoryList(){
       const statusClass = item.isOk ? 'ok' : 'bad';
       const dateStr = _fmtDate(item.timestamp);
       const tanggalStr = item.tanggal
-        ? new Date(item.tanggal).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'})
+        ? _formatInputDateID(item.tanggal, {day:'2-digit',month:'long',year:'numeric'})
         : '—';
 
       const div = document.createElement('div');
@@ -6571,14 +6713,20 @@ async function renderHistoryList(){
       const btn = e.target.closest('button[data-action]');
       if(!btn) return;
       const action = btn.dataset.action;
-      const id     = parseInt(btn.dataset.id);
+      const id     = parseInt(btn.dataset.id, 10);
       if(action === 'load'){
         await loadHistoryItem(id);
       } else if(action === 'delete'){
-        if(confirm('Hapus riwayat ini?')){
-          await _idb.deleteHistory(id);
-          renderHistoryList();
-        }
+        showConfirmModal(
+          'Hapus Riwayat?',
+          'Riwayat inspeksi ini akan dihapus permanen dari perangkat Anda.',
+          async ()=>{
+            await _idb.deleteHistory(id);
+            renderHistoryList();
+            showToast('Riwayat inspeksi dihapus.', 'info', 3000);
+          },
+          { okText: 'Hapus', danger: true }
+        );
       }
     };
 
@@ -6591,104 +6739,127 @@ async function renderHistoryList(){
 // Escape HTML untuk mencegah XSS
 function _escHtml(str){ var s=String(str); s=s.replace(/&/g,'&amp;'); s=s.replace(/</g,'&lt;'); s=s.replace(/>/g,'&gt;'); s=s.replace(/"/g,'&quot;'); return s; }
 
+// Helper untuk memulihkan satu kanvas tanda tangan secara utuh
+function _restoreSignatureFromDataURL(canvasId, dataURL){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  if(!dataURL){
+    clearSignature(canvasId);
+    return;
+  }
+  const wrap   = canvas.closest('.sign-canvas-wrap');
+  const status = document.getElementById('status-' + canvasId);
+  canvas.dataset.signed = 'true';
+  canvas.dataset.canvasSelected = 'true';
+  canvas.dataset.savedDataURL = dataURL;
+  safeStorage.setItem('ikl_sign_' + canvasId, dataURL);
+  if(wrap){
+    wrap.classList.add('active');
+    wrap.style.cursor = 'crosshair';
+    const ov = wrap.querySelector('.sign-overlay');
+    if(ov) ov.remove();
+  }
+  if(status){
+    status.textContent = 'Sudah ditandatangani \u2713';
+    status.className = 'sign-status signed';
+  }
+  const img = new Image();
+  img.onload = ()=>{
+    const ctx = canvas.getContext('2d');
+    if(!ctx) return;
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  };
+  img.src = dataURL;
+}
+
 // Muat riwayat ke form
 async function loadHistoryItem(id){
   try{
     const item = await _idb.getHistory(id);
-    if(!item){ alert('Data riwayat tidak ditemukan.'); return; }
+    if(!item){ showToast('Data riwayat tidak ditemukan.', 'error', 4000); return; }
 
-    if(!confirm('Muat inspeksi "' + item.namaSPPG + '" tanggal ' +
-      (item.tanggal || 'tidak diketahui') + '?\nData formulir saat ini akan ditimpa.')) return;
+    showConfirmModal(
+      'Muat Riwayat Inspeksi?',
+      'Muat inspeksi "' + item.namaSPPG + '" tanggal ' +
+      (item.tanggal ? _formatInputDateID(item.tanggal) : 'tidak diketahui') +
+      '?\nData formulir yang sedang terbuka saat ini akan ditimpa.',
+      ()=>{
+        try {
+          document.getElementById('history-modal').classList.remove('active');
+          isInternalUpdate = true;
 
-    // Tutup modal
-    document.getElementById('history-modal').classList.remove('active');
+          // Kosongkan semua field teks dulu
+          document.querySelectorAll('.field-input').forEach(el=>{ el.value = ''; });
 
-    // Tandai internal update agar tidak trigger autosave saat restore
-    isInternalUpdate = true;
+          // Restore text inputs
+          if(item.formData && item.formData.textInputs){
+            Object.entries(item.formData.textInputs).forEach(([fid,v])=>{
+              const el = document.getElementById(fid);
+              if(el) el.value = v;
+            });
+          }
 
-    // Restore text inputs
-    if(item.formData && item.formData.textInputs){
-      Object.entries(item.formData.textInputs).forEach(([id,v])=>{
-        const el = document.getElementById(id);
-        if(el) el.value = v;
-      });
-    }
-
-    // Reset semua radio ke default NA dulu
-    document.querySelectorAll('.score-input').forEach(el=>{
-      el.checked = false;
-      styleRadioLabels(el.name);
-    });
-
-    // Bersihkan appState.scores agar nilai lama tidak tertinggal
-    appState.scores = {};
-
-    // Restore radio inputs — sync _t dan _m + isi appState.scores
-    if(item.formData && item.formData.radioInputs){
-      Object.entries(item.formData.radioInputs).forEach(([name,val])=>{
-        const base = name.replace(/_t$/,'').replace(/_m$/,'');
-
-        // Isi appState.scores agar calculateScore() membaca nilai yang benar
-        const critMatch = base.match(/^crit-(.+)-([A-H])$/);
-        if(critMatch){
-          const v = parseInt(val, 10);
-          if(!isNaN(v)) appState.scores[base] = v;
-        }
-
-        ['_t','_m',''].forEach(suffix=>{
-          const fullName = base + suffix;
-          document.querySelectorAll('input[name="' + fullName + '"]').forEach(r=>{
-            if(r.value === val){
-              r.checked = true;
-              if(r.classList.contains('score-input')) styleRadioLabels(fullName);
-              else if(r.classList.contains('special-req-input')) styleSpecialReqLabels(fullName);
-            }
+          // Reset semua radio ke default (0 untuk kriteria, Ya untuk persyaratan khusus)
+          document.querySelectorAll('.score-input[value="0"]').forEach(el=>{
+            el.checked = true;
+            styleRadioLabels(el.name);
           });
-        });
-      });
-    }
+          document.querySelectorAll('.special-req-input[value="Ya"]').forEach(el=>{
+            el.checked = true;
+            styleSpecialReqLabels(el.name);
+          });
 
-    // Restore tanda tangan jika ada
-    if(item.signatures){
-      if(item.signatures.pemeriksa){
-        const canvas = document.getElementById('sign-pemeriksa');
-        if(canvas){
-          const img = new Image();
-          img.onload = ()=>{
-            const ctx = canvas.getContext('2d');
-            if(ctx) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.dataset.signed = 'true';
-            const st = document.getElementById('status-sign-pemeriksa');
-            if(st){ st.textContent = 'Sudah ditandatangani \u2713'; st.className = 'sign-status signed'; }
-          };
-          img.src = item.signatures.pemeriksa;
-        }
-      }
-      if(item.signatures.pengelola){
-        const canvas = document.getElementById('sign-pengelola');
-        if(canvas){
-          const img = new Image();
-          img.onload = ()=>{
-            const ctx = canvas.getContext('2d');
-            if(ctx) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.dataset.signed = 'true';
-            const st = document.getElementById('status-sign-pengelola');
-            if(st){ st.textContent = 'Sudah ditandatangani \u2713'; st.className = 'sign-status signed'; }
-          };
-          img.src = item.signatures.pengelola;
-        }
-      }
-    }
+          appState.scores = {};
+          appState.specialReqs = {};
 
-    isInternalUpdate = false;
-    calculateScore();
-    // Simpan ke autosave agar persisten
-    saveFormData();
+          // Restore radio inputs — sync _t dan _m + isi appState.scores
+          if(item.formData && item.formData.radioInputs){
+            Object.entries(item.formData.radioInputs).forEach(([name,val])=>{
+              const base = name.replace(/_t$/,'').replace(/_m$/,'');
+              const critMatch = base.match(/^crit-(.+)-([A-H])$/);
+              if(critMatch){
+                const v = parseInt(val, 10);
+                if(!isNaN(v)) appState.scores[base] = v;
+              }
+              ['_t','_m',''].forEach(suffix=>{
+                const fullName = base + suffix;
+                document.querySelectorAll('input[name="' + fullName + '"]').forEach(r=>{
+                  if(r.value === val){
+                    r.checked = true;
+                    if(r.classList.contains('score-input')) styleRadioLabels(fullName);
+                    else if(r.classList.contains('special-req-input')) styleSpecialReqLabels(fullName);
+                  }
+                });
+              });
+            });
+          }
+
+          // Restore tanda tangan
+          _restoreSignatureFromDataURL('sign-pemeriksa', item.signatures ? item.signatures.pemeriksa : null);
+          _restoreSignatureFromDataURL('sign-pengelola', item.signatures ? item.signatures.pengelola : null);
+
+          isInternalUpdate = false;
+          calculateScore();
+          restoreMapsButton();
+          saveFormData();
+          showToast('Riwayat "' + item.namaSPPG + '" berhasil dimuat.', 'success', 3500);
+        } catch(err){
+          isInternalUpdate = false;
+          console.warn('Restore history inner error:', err);
+          showToast('Gagal memuat riwayat.', 'error', 4000);
+        }
+      },
+      { okText: 'Ya, Muat Data' }
+    );
 
   }catch(e){
     isInternalUpdate = false;
     console.warn('Load history error:', e);
-    alert('Gagal memuat riwayat.');
+    showToast('Gagal memuat riwayat.', 'error', 4000);
   }
 }
 
@@ -6889,14 +7060,21 @@ function setupPhotoFeature(){
   });
 
   // Hapus foto tersimpan
-  btnDelete.addEventListener('click', async ()=>{
+  btnDelete.addEventListener('click', ()=>{
     if(!_photoState.critNo) return;
-    if(!confirm('Hapus foto ini?')) return;
-    try{
-      await _idb.deletePhoto(_fotoKey(_photoState.critNo));
-      _refreshPhotoBtn(_photoState.critNo, false);
-      _resetPhotoModal();
-    }catch(err){ alert('Gagal menghapus foto.'); }
+    showConfirmModal(
+      'Hapus Foto Bukti?',
+      'Foto bukti untuk kriteria No. ' + _photoState.critNo + ' akan dihapus.',
+      async ()=>{
+        try{
+          await _idb.deletePhoto(_fotoKey(_photoState.critNo));
+          _refreshPhotoBtn(_photoState.critNo, false);
+          _resetPhotoModal();
+          showToast('Foto bukti dihapus.', 'info', 3000);
+        }catch(err){ showToast('Gagal menghapus foto.', 'error', 4000); }
+      },
+      { okText: 'Hapus Foto', danger: true }
+    );
   });
 
   // Ganti foto → kembali ke pilihan kamera/galeri
@@ -6956,17 +7134,12 @@ function validateBeforeExport(){
     if(!el || !el.value.trim()) missing.push({ label: f.label, type:'required' });
   });
 
-  // Cek apakah ada kriteria yang belum diisi (masih semua NA di semua area)
-  let allNACriteria = 0;
-  CRITERIA.forEach(crit=>{
-    if(crit.isHeader) return;
-    // Cek apakah kriteria ini punya area aktif (bukan semua NA)
-    const hasActiveArea = Object.values(crit.areas).some(v => v !== 'NA');
-    if(!hasActiveArea) return; // semua NA memang, skip
-    // Cek apakah user sudah memberi nilai (nilai > 0 atau eksplisit memilih NA)
-    // Karena default adalah NA (0), kita tidak bisa tahu apakah user memang pilih NA
-    // Jadi hanya validasi field wajib saja untuk sekarang
-  });
+  // Validasi logika jumlah penjamah terlatih vs total penjamah
+  const totPenjamah = parseInt((document.getElementById('total_penjamah')||{}).value, 10);
+  const penjamahSert = parseInt((document.getElementById('penjamah_bersertifikat')||{}).value, 10);
+  if(!isNaN(totPenjamah) && !isNaN(penjamahSert) && penjamahSert > totPenjamah){
+    missing.push({ label:'Jumlah Penjamah Terlatih melebihi Total Penjamah Pangan', type:'warning' });
+  }
 
   // Tanda tangan — cek apakah canvas masih kosong
   ['sign-pemeriksa','sign-pengelola'].forEach(id=>{
@@ -7085,12 +7258,12 @@ async function doExportPDF(){
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url),10000);
     restore();
-    alert('File HTML laporan diunduh. Buka file tersebut lalu cetak → Simpan sebagai PDF.');
+    showToast('File HTML laporan diunduh. Buka file tersebut lalu cetak sebagai PDF.', 'success', 6000);
     return;
   } catch(e){}
 
   restore();
-  alert('Gagal mengekspor. Silakan coba browser lain.');
+  showToast('Gagal mengekspor laporan. Silakan coba kembali.', 'error', 5000);
 }
 
 // ═══════════════════════════════════════════════════════
@@ -7567,22 +7740,23 @@ let _resetCountdownTimer = null;
 function showResetModal() {
   const modal   = document.getElementById('reset-confirm-modal');
   const btn     = document.getElementById('reset-proceed-btn');
-  const counter = document.getElementById('reset-countdown');
-  if(!modal || !btn || !counter) { executeReset(); return; }
+  const wrap    = document.getElementById('reset-countdown-wrap');
+  if(!modal || !btn || !wrap) { executeReset(); return; }
 
+  clearInterval(_resetCountdownTimer);
   let secs = 5;
-  counter.textContent = secs;
+  wrap.innerHTML = 'Tombol aktif dalam <span id="reset-countdown">' + secs + '</span> detik.';
   btn.disabled = true;
   modal.classList.add('open');
 
   _resetCountdownTimer = setInterval(() => {
     secs--;
-    counter.textContent = secs;
+    const counter = document.getElementById('reset-countdown');
+    if(counter) counter.textContent = secs;
     if(secs <= 0) {
       clearInterval(_resetCountdownTimer);
       btn.disabled = false;
-      counter.textContent = '';
-      counter.closest('.reset-confirm-desc').lastChild.textContent = '';
+      wrap.textContent = 'Tombol sudah aktif. Silakan konfirmasi.';
     }
   }, 1000);
 }
@@ -7591,11 +7765,10 @@ function closeResetModal() {
   const modal = document.getElementById('reset-confirm-modal');
   if(modal) modal.classList.remove('open');
   clearInterval(_resetCountdownTimer);
-  // Reset tombol
   const btn = document.getElementById('reset-proceed-btn');
   if(btn) btn.disabled = true;
-  const counter = document.getElementById('reset-countdown');
-  if(counter) counter.textContent = '5';
+  const wrap = document.getElementById('reset-countdown-wrap');
+  if(wrap) wrap.innerHTML = 'Tombol aktif dalam <span id="reset-countdown">5</span> detik.';
 }
 
 function executeReset() {
@@ -7663,7 +7836,7 @@ async function exportToExcel() {
     // Baris data
     const rows = sorted.map((item, idx) => {
       const tgl = item.tanggal
-        ? new Date(item.tanggal).toLocaleDateString('id-ID', {day:'2-digit',month:'2-digit',year:'numeric'})
+        ? _formatInputDateID(item.tanggal, {day:'2-digit',month:'2-digit',year:'numeric'})
         : '—';
       const simpan = item.timestamp
         ? new Date(item.timestamp).toLocaleDateString('id-ID', {day:'2-digit',month:'2-digit',year:'numeric'})
@@ -7671,13 +7844,14 @@ async function exportToExcel() {
 
       const nilaiFmt = parseFloat(item.iklScore||0).toFixed(2);
       const deviasi  = item.totalDeviation != null ? item.totalDeviation : '—';
+      const pemeriksa = item.namaPemeriksa || (item.formData && item.formData.textInputs && item.formData.textInputs.nama_pemeriksa) || '—';
       const hasil    = item.isOk ? 'MEMENUHI SYARAT' : 'TIDAK MEMENUHI SYARAT';
 
       return [
         idx + 1,
         tgl,
         item.namaSPPG || '—',
-        item.namaPemeriksa || '—',
+        pemeriksa,
         nilaiFmt,
         deviasi,
         hasil,
@@ -7786,24 +7960,23 @@ async function importBackupFile(input) {
         ? new Date(data._meta.exportedAt).toLocaleDateString('id-ID')
         : 'tidak diketahui';
 
-      const ok = confirm(
-        `Pulihkan ${count} inspeksi dari backup tanggal ${date}?\n\n` +
-        `PERHATIAN: Data riwayat yang ada saat ini akan DIGABUNG dengan backup (tidak dihapus).`
-      );
-      if(!ok) return;
-
       closeBackupModal();
-      showToast('Memulihkan data...', 'info', 3000);
-
-      let imported = 0;
-      for(const item of data.history) {
-        try {
-          await _idb.saveHistory(item);
-          imported++;
-        } catch(e) { /* skip duplicate */ }
-      }
-
-      showToast(`Berhasil memulihkan ${imported} dari ${count} inspeksi.`, 'success', 6000);
+      showConfirmModal(
+        'Pulihkan Data Backup?',
+        `Pulihkan ${count} inspeksi dari backup tanggal ${date}?\n\nData riwayat yang ada saat ini akan DIGABUNG dengan data backup (tidak dihapus).`,
+        async () => {
+          showToast('Memulihkan data...', 'info', 3000);
+          let imported = 0;
+          for(const item of data.history) {
+            try {
+              await _idb.saveHistory(item);
+              imported++;
+            } catch(err) { /* skip duplicate */ }
+          }
+          showToast(`Berhasil memulihkan ${imported} dari ${count} inspeksi.`, 'success', 6000);
+        },
+        { okText: 'Ya, Pulihkan' }
+      );
     } catch(err) {
       showToast('File rusak atau format tidak dikenal: ' + err.message, 'error', 6000);
     }
