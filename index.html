@@ -1078,10 +1078,10 @@ textarea.field-input { resize:vertical; min-height:90px; }
   border-left: 1px solid var(--border);
 }
 
-/* Baris 2: 5 tombol (Reset, Unduh, Riwayat, Backup, QR) satu baris penuh rata & responsif */
+/* Baris 2: 6 tombol (Reset, Unduh, Riwayat, Backup, QR, Referensi) satu baris penuh rata & responsif */
 .bar-row-actions {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
   width: 100%;
 }
@@ -1089,7 +1089,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
 .bar-btn {
   width: 100%;
   min-width: 0;
-  padding: 8px 6px;
+  padding: 8px 4px;
   font-size: 12px;
   gap: 5px;
   justify-content: center;
@@ -1100,15 +1100,15 @@ textarea.field-input { resize:vertical; min-height:90px; }
 }
 .bar-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
 
-/* Responsif layar kecil (<420px): susun ikon & teks agar 5 tombol tetap lega dalam 1 baris */
-@media (max-width: 420px) {
+/* Responsif layar kecil (<480px): susun ikon & teks agar 6 tombol tetap lega dalam 1 baris */
+@media (max-width: 480px) {
   .bar-row-actions {
     gap: 4px;
   }
   .bar-btn {
     flex-direction: column;
     padding: 6px 2px;
-    font-size: 10px;
+    font-size: 9.5px;
     gap: 3px;
     line-height: 1.15;
   }
@@ -1121,7 +1121,7 @@ textarea.field-input { resize:vertical; min-height:90px; }
 /* Legacy aliases */
 .bar-col { min-width: 0; }
 .bar-col-actions { flex-shrink: 0; }
-.bar-btn-grid { display:grid; grid-template-columns: repeat(5,1fr); gap:6px; }
+.bar-btn-grid { display:grid; grid-template-columns: repeat(6,1fr); gap:6px; }
 .bar-score-center { flex:1; }
 .bar-actions { display:flex; gap:8px; margin-top:8px; }
 .bar-left { flex:1; display:flex; flex-direction:column; gap:0; min-width:0; }
@@ -1991,11 +1991,11 @@ textarea.field-input { resize:vertical; min-height:90px; }
     padding-left: 16px;
   }
   .bar-row-actions {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 10px;
   }
   .bar-btn {
-    padding: 9px 12px;
+    padding: 9px 10px;
     font-size: 13px;
   }
   .bar-score-value {
@@ -2152,8 +2152,8 @@ textarea.field-input { resize:vertical; min-height:90px; }
   .section-hdr { padding: 12px 16px; }
   .section-body-inner { padding: 0 16px 14px; }
   .stats-grid { grid-template-columns: repeat(4,1fr); }
-  .bar-row-actions, .bar-btn-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
-  .bar-btn { flex-direction: row; padding: 5px 6px; font-size: 10px; gap: 4px; }
+  .bar-row-actions, .bar-btn-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+  .bar-btn { flex-direction: row; padding: 5px 4px; font-size: 10px; gap: 4px; }
   .btn { padding: 7px 12px; font-size: 12px; }
 }
 
@@ -2393,6 +2393,80 @@ textarea.field-input { resize:vertical; min-height:90px; }
   color: var(--text-secondary);
   font-size: 13px;
   cursor: pointer;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODAL REFERENSI (CHEAT SHEET NILAI & AREA)
+═══════════════════════════════════════════════════════ */
+#referensi-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#referensi-modal.open {
+  display: flex;
+}
+.referensi-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  animation: modalIn .22s var(--ease-spring) both;
+}
+.referensi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.referensi-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.referensi-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.referensi-area-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--brand-light);
+  color: var(--brand);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
 }
 </style>
 <script>
@@ -2696,6 +2770,57 @@ textarea.field-input { resize:vertical; min-height:90px; }
     </div>
     <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="importBackupFile(this)">
     <button class="backup-close-btn" onclick="closeBackupModal()">Tutup</button>
+  </div>
+</div>
+
+<!-- ══ MODAL REFERENSI (CHEAT SHEET NILAI & AREA) ══ -->
+<div id="referensi-modal" role="dialog" aria-modal="true" aria-label="Referensi Keterangan Nilai dan Area">
+  <div class="referensi-box">
+    <div class="referensi-head">
+      <div class="referensi-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:var(--brand)"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Referensi Penilaian IKL
+      </div>
+      <button class="btn btn-outline" type="button" onclick="closeReferensiModal()" style="padding:5px 12px;font-size:12px">Tutup</button>
+    </div>
+
+    <div class="legend-card" style="margin-bottom:12px">
+      <div class="legend-card-title">Keterangan Nilai</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="legend-item" style="align-items:center;gap:10px">
+          <span class="referensi-badge" style="background:var(--score-ok)">NA</span>
+          <span><strong>Tidak Berlaku</strong> — Kriteria sesuai atau tidak berlaku pada area tersebut</span>
+        </div>
+        <div class="legend-item" style="align-items:center;gap:10px">
+          <span class="referensi-badge" style="background:var(--score-1)">1</span>
+          <span><strong>Minor</strong> — Ketidaksesuaian ringan, perbaikan wajar</span>
+        </div>
+        <div class="legend-item" style="align-items:center;gap:10px">
+          <span class="referensi-badge" style="background:var(--score-2)">2</span>
+          <span><strong>Mayor</strong> — Ketidaksesuaian sedang, perlu perhatian serius</span>
+        </div>
+        <div class="legend-item" style="align-items:center;gap:10px">
+          <span class="referensi-badge" style="background:var(--score-3)">3</span>
+          <span><strong>Kritis</strong> — Ketidaksesuaian berat, risiko kesehatan tinggi</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="legend-card">
+      <div class="legend-card-title">Keterangan Area (A–H)</div>
+      <div class="legend-grid-inner" style="gap:8px 12px">
+        <div class="legend-item" style="align-items:center;gap:8px"><span class="referensi-area-badge">A</span><span>Luar Bangunan</span></div>
+        <div class="legend-item" style="align-items:center;gap:8px"><span class="referensi-area-badge">B</span><span>Fasilitas Karyawan</span></div>
+        <div class="legend-item" style="align-items:center;gap:8px"><span class="referensi-area-badge">C</span><span>Penerimaan</span></div>
+        <div class="legend-item" style="align-items:center;gap:8px"><span class="referensi-area-badge">D</span><span>Penyimpanan</span></div>
+        <div class="legend-item" style="align-items:center;gap:8px"><span class="referensi-area-badge">E</span><span>Pengolahan</span></div>
+        <div class="legend-item" style="align-items:center;gap:8px"><span class="referensi-area-badge">F</span><span>Pengemasan</span></div>
+        <div class="legend-item" style="align-items:center;gap:8px"><span class="referensi-area-badge">G</span><span>Pemuatan</span></div>
+        <div class="legend-item" style="align-items:center;gap:8px"><span class="referensi-area-badge">H</span><span>Pencucian</span></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" type="button" onclick="closeReferensiModal()" style="width:100%;margin-top:14px;padding:10px">Mengerti &amp; Tutup</button>
   </div>
 </div>
 
@@ -3043,16 +3168,6 @@ textarea.field-input { resize:vertical; min-height:90px; }
     </div>
   </div>
 
-  <!-- #07 DISCLAIMER & REFERENSI REGULASI -->
-  <div style="margin:0 16px 8px;padding:12px 14px;border-radius:10px;background:var(--surface-alt);border:1px solid var(--border);font-size:11px;color:var(--text-muted);line-height:1.6">
-    <strong style="color:var(--text-secondary)">⚠️ Catatan Penting:</strong><br>
-    Tanda tangan pada formulir ini merupakan <em>tanda tangan elektronik tidak tersertifikasi</em>
-    sesuai UU ITE No. 11/2008 dan PP No. 71/2019, digunakan untuk keperluan dokumentasi inspeksi.
-    Pastikan regulasi IKL yang digunakan telah sesuai ketentuan Kemenkes terbaru.
-    Verifikasi dengan Dinas Kesehatan setempat jika diperlukan.<br>
-    <span style="opacity:.7">Versi Formulir: v<span class="app-version-text">2026.1.0</span></span>
-  </div>
-
 </div><!-- /#app-wrapper -->
 
 <!-- ══════════ FIXED SCORE BAR ══════════ -->
@@ -3110,6 +3225,10 @@ textarea.field-input { resize:vertical; min-height:90px; }
         <button id="btn-show-qr" class="btn btn-outline bar-btn" aria-label="Tampilkan QR Code laporan" title="QR Code">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/></svg>
           QR
+        </button>
+        <button id="btn-referensi" class="btn btn-outline bar-btn" aria-label="Referensi keterangan nilai dan area" title="Referensi Nilai & Area" onclick="openReferensiModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Referensi
         </button>
       </div>
 
@@ -7666,6 +7785,19 @@ function formatDateID(date) {
 // ═══════════════════════════════════════════════════════════════
 // #06 EKSPOR / IMPOR DATABASE RIWAYAT (JSON)
 // ═══════════════════════════════════════════════════════════════
+function openReferensiModal() {
+  const modal = document.getElementById('referensi-modal');
+  if(!modal) return;
+  modal.classList.add('open');
+  modal.onclick = (e) => { if(e.target === modal) closeReferensiModal(); };
+}
+function closeReferensiModal() {
+  const modal = document.getElementById('referensi-modal');
+  if(modal) modal.classList.remove('open');
+}
+window.openReferensiModal  = openReferensiModal;
+window.closeReferensiModal = closeReferensiModal;
+
 function openBackupModal() {
   document.getElementById('backup-modal').classList.add('open');
 }
